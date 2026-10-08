@@ -8,7 +8,7 @@ type NodeCategoryProps = {
     title: string;
     category: NodeCategoryType;
     selectedNodeId: string | null;
-    onSelectedNode: (id: string) => void;
+    onSelectNode: (id: string) => void;
 };
 
 const nodeIcons = {
@@ -23,7 +23,7 @@ function NodeCategory({
      title,
      category,
      selectedNodeId,
-     onSelectedNode,
+     onSelectNode,
 }: NodeCategoryProps) {
     const [isExpanded, setIsExpanded] = useState(true);
 
@@ -57,7 +57,7 @@ function NodeCategory({
                             <div
                                 className={`node-item node-item--${node.category}`}
                                 key={node.id}
-                                onClick={() => onSelectedNode(node.id)}
+                                onClick={() => onSelectNode(node.id)}
                                 data-selected={selectedNodeId === node.id}
                             >
                                 {Icon && <Icon size={16} className="node-icon" />}

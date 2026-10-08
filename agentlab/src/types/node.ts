@@ -3,8 +3,9 @@ export type NodeCategoryType =
     | "condition"
     | "action";
 
-export interface nodeDefinition {
+export interface NodeDefinition {
     id: string;
     label: string;
     category: NodeCategoryType;
+    description: string;
 }

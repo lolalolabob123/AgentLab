@@ -62,6 +62,8 @@ body {
 }
 
 .editor {
+  display: flex;
+  min-height: 0;
   flex: 1;
   min-width: 0;
   background-color: #1c1e25;
@@ -208,4 +210,125 @@ body {
 
 .node-item--action .node-icon {
   color: #34d399;
+}
+
+.inspector-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #3a3d46;
+}
+
+.inspector-section h4 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a1a1aa;
+}
+
+.inspector-section p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #d1d5db;
+}
+
+.behaviour-editor {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.root-node {
+  width: 160px;
+  background-color: #2b2d36;
+  border: 1px solid #626775;
+  border-radius: 6px;
+  color: #e2e8f0;
+  overflow: visible;
+}
+
+.root-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 9px 12px;
+  background-color: #383b46;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  border-radius: 5px 5px 0 0;
+}
+
+.root-node-body {
+  padding: 10px 12px;
+  color: #a1a1aa;
+  font-size: 11px;
+  text-align: center;
+}
+
+.react-flow__node-root {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+.node-handle {
+  width: 18px;
+  height: 18px;
+  background-color: #a1a1aa;
+  border: 4px solid #2b2d36;
+  border-radius: 50%;
+  cursor: crosshair;
+}
+
+.node-handle:hover {
+  background-color: #e2e8f0;
+  border-color: #626775;
+}
+
+.control-node {
+  width: 160px;
+  background-color: #2b2d36;
+  border: 1px solid #a78bfa;
+  border-radius: 6px;
+  color: #e2e8f0;
+  overflow: visible;
+}
+
+.control-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 9px 12px;
+  background-color: #363044;
+  color: #e2e8f0;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  border-radius: 5px 5px 0 0;
+}
+
+.control-node-header svg {
+  color: #a78bfa;
+}
+
+.control-node-body {
+  padding: 10px 12px;
+  color: #a1a1aa;
+  font-size: 11px;
+  text-align: center;
+}
+
+.react-flow_node-control {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
 }

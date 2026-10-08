@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
 import NodeLibrary from "./components/NodeLibrary";
+import { nodeDefinitions } from "./data/nodeDefinitions";
+import Inspector from "./components/Inspector";
+import BehaviourEditor from "./components/BehaviourEditor";
 
 function App() {
 
@@ -11,6 +14,10 @@ function App() {
   const [inspectorWidth, setInspectorWidth] = useState(240);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  const selectedNode = nodeDefinitions.find(
+    (node) => node.id === selectedNodeId
+  );
 
   const handleLibraryResize = (
     event: React.PointerEvent<HTMLDivElement>
@@ -98,8 +105,8 @@ function App() {
               style={{ width: `${libraryWidth}px` }}
             >
               <NodeLibrary
-              selectedNodeId={selectedNodeId}
-              onSelectNode={setSelectedNodeId}
+                selectedNodeId={selectedNodeId}
+                onSelectNode={setSelectedNodeId}
               />
             </aside>
 
@@ -117,7 +124,7 @@ function App() {
         )}
 
         <main className="editor">
-          Behaviour Editor
+          <BehaviourEditor />
         </main>
 
         {isInspectorOpen && (
@@ -137,7 +144,7 @@ function App() {
               className="inspector"
               style={{ width: `${inspectorWidth}px` }}
             >
-              Inspector
+              <Inspector selectedNode={selectedNode}/>
             </aside>
           </>
         )}
