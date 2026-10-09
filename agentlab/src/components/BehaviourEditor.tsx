@@ -1,8 +1,9 @@
-import { ReactFlow, Background, Controls, useNodesState } from "@xyflow/react";
+import { ReactFlow, Background, Controls, useNodesState, useEdgesState, addEdge, type Connection } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import type { Node } from "@xyflow/react";
+import type { Node, Edge } from "@xyflow/react";
 import RootNode from "./nodes/RootNode";
 import ControlNode from "./nodes/ControlNode";
+import { isValidConnection } from "../engine/behaviour-tree/validation";
 
 const nodeTypes = {
     root: RootNode,
@@ -19,17 +20,37 @@ const initialNodes: Node[] = [
     {
         id: "selector-1",
         type: "control",
-        position: {x: 100, y: 200},
+        position: { x: 100, y: 200 },
         data: {
             label: "Selector",
             variant: "selector",
+        },
+    },
+    {
+        id: "sequence-1",
+        type: "control",
+        position: { x: 350, y: 260 },
+        data: {
+            label: "Sequence",
+            variant: "sequence",
         },
     },
 ];
 
 function BehaviourEditor() {
 
-    const [nodes, setNodes, onNodeChange] = useNodesState(initialNodes);
+    const [nodes, setNodes, onNodeChange] = useNodesState<Node>(initialNodes);
+    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+    const onConnect = (connection: Connection) => {
+        setEdges((currentEdges) => {
+            if (!isValidConnection(connection, currentEdges)) {
+                return currentEdges;
+            }
+
+            return addEdge(connection, currentEdges);
+        });
+    };
 
     return (
         <div className="behaviour-editor">
@@ -37,7 +58,9 @@ function BehaviourEditor() {
                 nodes={nodes}
                 onNodesChange={onNodeChange}
                 nodeTypes={nodeTypes}
-                edges={[]}
+                edges={edges}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
                 colorMode="dark"
                 fitView
             >
