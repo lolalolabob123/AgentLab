@@ -9,6 +9,7 @@ type NodeCategoryProps = {
     category: NodeCategoryType;
     selectedNodeId: string | null;
     onSelectNode: (id: string) => void;
+    onAddNode: (id: string) => void;
 };
 
 const nodeIcons = {
@@ -24,6 +25,7 @@ function NodeCategory({
      category,
      selectedNodeId,
      onSelectNode,
+     onAddNode,
 }: NodeCategoryProps) {
     const [isExpanded, setIsExpanded] = useState(true);
 
@@ -59,6 +61,16 @@ function NodeCategory({
                                 key={node.id}
                                 onClick={() => onSelectNode(node.id)}
                                 data-selected={selectedNodeId === node.id}
+                                onDoubleClick={() => onAddNode(node.id)}
+                                draggable
+                                onDragStart={(event) => {
+                                    event.dataTransfer.setData(
+                                        "application/agentlab-node",
+                                        node.id
+                                    );
+
+                                    event.dataTransfer.effectAllowed = "copy";
+                                }}
                             >
                                 {Icon && <Icon size={16} className="node-icon" />}
                                 <span>{node.label}</span>

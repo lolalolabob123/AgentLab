@@ -4,6 +4,7 @@ import NodeLibrary from "./components/NodeLibrary";
 import { nodeDefinitions } from "./data/nodeDefinitions";
 import Inspector from "./components/Inspector";
 import BehaviourEditor from "./components/BehaviourEditor";
+import {ReactFlowProvider} from "@xyflow/react";
 
 function App() {
 
@@ -15,9 +16,21 @@ function App() {
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
+  const [nodeToAdd, setNodeToAdd] = useState<{
+    id: string;
+    requestId: string;
+  } | null>(null);
+
   const selectedNode = nodeDefinitions.find(
     (node) => node.id === selectedNodeId
   );
+
+  const handleAddNode = (id: string) => {
+    setNodeToAdd({
+      id,
+      requestId: crypto.randomUUID()
+    });
+  };
 
   const handleLibraryResize = (
     event: React.PointerEvent<HTMLDivElement>
@@ -107,6 +120,7 @@ function App() {
               <NodeLibrary
                 selectedNodeId={selectedNodeId}
                 onSelectNode={setSelectedNodeId}
+                onAddNode={handleAddNode}
               />
             </aside>
 
@@ -124,7 +138,9 @@ function App() {
         )}
 
         <main className="editor">
-          <BehaviourEditor />
+          <ReactFlowProvider>
+            <BehaviourEditor nodeToAdd={nodeToAdd} />
+          </ReactFlowProvider>
         </main>
 
         {isInspectorOpen && (
