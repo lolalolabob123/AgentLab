@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
 import NodeLibrary from "./components/NodeLibrary";
 import { nodeDefinitions } from "./data/nodeDefinitions";
 import Inspector from "./components/Inspector";
 import BehaviourEditor from "./components/BehaviourEditor";
-import {ReactFlowProvider} from "@xyflow/react";
+import { ReactFlowProvider } from "@xyflow/react";
+import CanvasNodeInspector from "./components/CanvasNodeInspector";
 
 function App() {
 
@@ -15,11 +16,14 @@ function App() {
   const [inspectorWidth, setInspectorWidth] = useState(240);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedCanvasNodeId, setSelectedCanvasNodeId] = useState<string | null>(null);
 
   const [nodeToAdd, setNodeToAdd] = useState<{
     id: string;
     requestId: string;
   } | null>(null);
+
+  const [selectionSource, setSelectionSource] = useState<"library" | "canvas" | null>(null);
 
   const selectedNode = nodeDefinitions.find(
     (node) => node.id === selectedNodeId
@@ -31,6 +35,21 @@ function App() {
       requestId: crypto.randomUUID()
     });
   };
+
+  const handleSelectCanvasNode = (nodeId: string) => {
+    setSelectedCanvasNodeId(nodeId);
+    setSelectionSource("canvas");
+  };
+
+  const handleClearCanvasSelection = useCallback(() => {
+    setSelectedCanvasNodeId(null);
+    setSelectionSource(null);
+  }, []);
+
+  const handleSelectLibraryNode = (nodeId: string) => {
+    setSelectedNodeId(nodeId);
+    setSelectionSource("library");
+  }
 
   const handleLibraryResize = (
     event: React.PointerEvent<HTMLDivElement>
@@ -110,61 +129,73 @@ function App() {
         </button>
       </header>
 
-      <div className="workspace">
-        {isLibraryOpen && (
-          <>
-            <aside
-              className="node-library"
-              style={{ width: `${libraryWidth}px` }}
-            >
-              <NodeLibrary
-                selectedNodeId={selectedNodeId}
-                onSelectNode={setSelectedNodeId}
-                onAddNode={handleAddNode}
+      <ReactFlowProvider>
+        <div className="workspace">
+          {isLibraryOpen && (
+            <>
+              <aside
+                className="node-library"
+                style={{ width: `${libraryWidth}px` }}
+              >
+                <NodeLibrary
+                  selectedNodeId={selectedNodeId}
+                  onSelectNode={handleSelectLibraryNode}
+                  onAddNode={handleAddNode}
+                />
+              </aside>
+
+              <div
+                className="resize-divider"
+                onPointerDown={(event) => {
+                  event?.currentTarget.setPointerCapture(event.pointerId);
+                }}
+                onPointerMove={handleLibraryResize}
+                onPointerUp={(event) => {
+                  event.currentTarget.releasePointerCapture(event.pointerId);
+                }}
               />
-            </aside>
+            </>
+          )}
 
-            <div
-              className="resize-divider"
-              onPointerDown={(event) => {
-                event?.currentTarget.setPointerCapture(event.pointerId);
-              }}
-              onPointerMove={handleLibraryResize}
-              onPointerUp={(event) => {
-                event.currentTarget.releasePointerCapture(event.pointerId);
-              }}
+          <main className="editor">
+            <BehaviourEditor
+              nodeToAdd={nodeToAdd}
+              onSelectCanvasNode={handleSelectCanvasNode}
+              onClearCanvasSelection={handleClearCanvasSelection}
             />
-          </>
-        )}
+          </main>
 
-        <main className="editor">
-          <ReactFlowProvider>
-            <BehaviourEditor nodeToAdd={nodeToAdd} />
-          </ReactFlowProvider>
-        </main>
+          {isInspectorOpen && (
+            <>
+              <div
+                className="inspector-resize-divider"
+                onPointerDown={(event) => {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                }}
+                onPointerMove={handleInspectorresize}
+                onPointerUp={(event) => {
+                  event.currentTarget.releasePointerCapture(event.pointerId);
+                }}
+              />
 
-        {isInspectorOpen && (
-          <>
-            <div
-              className="inspector-resize-divider"
-              onPointerDown={(event) => {
-                event.currentTarget.setPointerCapture(event.pointerId);
-              }}
-              onPointerMove={handleInspectorresize}
-              onPointerUp={(event) => {
-                event.currentTarget.releasePointerCapture(event.pointerId);
-              }}
-            />
-
-            <aside
-              className="inspector"
-              style={{ width: `${inspectorWidth}px` }}
-            >
-              <Inspector selectedNode={selectedNode}/>
-            </aside>
-          </>
-        )}
-      </div>
+              <aside
+                className="inspector"
+                style={{ width: `${inspectorWidth}px` }}
+              >
+                {selectionSource === "canvas" ? (
+                  <CanvasNodeInspector
+                    selectedCanvasNodeId={selectedCanvasNodeId}
+                  />
+                ) : (
+                  <Inspector
+                    selectedNode={selectedNode}
+                  />
+                )}
+              </aside>
+            </>
+          )}
+        </div>
+      </ReactFlowProvider>
 
       <footer className="status-bar">
         Ready

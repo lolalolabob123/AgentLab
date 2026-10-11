@@ -1,4 +1,4 @@
-import type { Edge, Connection } from "@xyflow/react";
+import type { Edge, Connection, Node } from "@xyflow/react";
 
 export function wouldCreateCycle(
     edges: Edge[],
@@ -37,11 +37,25 @@ export function wouldCreateCycle(
 
 export function isValidConnection(
     connection: Connection,
-    edges: Edge[]
+    edges: Edge[],
+    nodes: Node[] = []
 ): boolean {
     const {source, target} = connection;
 
+    const sourceNode = nodes.find((node) => node.id === source);
+
+    if (
+        sourceNode?.type === "action" ||
+        sourceNode?.type === "condition"
+    ) {
+        return false;
+    }
+
     if (source === target) {
+        return false;
+    }
+
+    if (target === "root-1") {
         return false;
     }
 

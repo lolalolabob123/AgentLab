@@ -17,14 +17,17 @@ import "@xyflow/react/dist/style.css";
 import RootNode from "./nodes/RootNode";
 import ControlNode from "./nodes/ControlNode";
 import ConditionNode from "./nodes/ConditionNode";
+import ActionNode from "./nodes/ActionNode";
 
 import { isValidConnection } from "../engine/behaviour-tree/validation";
 import { nodeDefinitions } from "../data/nodeDefinitions";
+import { createBehaviourNode } from "../engine/behaviour-tree/NodeFactory";
 
 const nodeTypes = {
     root: RootNode,
     control: ControlNode,
     condition: ConditionNode,
+    action: ActionNode,
 };
 
 const initialNodes: Node[] = [
@@ -59,9 +62,12 @@ type BehaviourEditorProps = {
         id: string;
         requestId: string;
     } | null;
+    onClearCanvasSelection: () => void;
+
+    onSelectCanvasNode: (nodeId: string) => void;
 };
 
-function BehaviourEditor({ nodeToAdd }: BehaviourEditorProps) {
+function BehaviourEditor({ nodeToAdd, onSelectCanvasNode, onClearCanvasSelection }: BehaviourEditorProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
@@ -71,7 +77,7 @@ function BehaviourEditor({ nodeToAdd }: BehaviourEditorProps) {
     // Validate connections before adding edges
     const onConnect = (connection: Connection) => {
         setEdges((currentEdges) => {
-            if (!isValidConnection(connection, currentEdges)) {
+            if (!isValidConnection(connection, currentEdges, nodes)) {
                 return currentEdges;
             }
 
@@ -97,32 +103,27 @@ function BehaviourEditor({ nodeToAdd }: BehaviourEditorProps) {
             (node) => node.id === nodeId
         );
 
-        // Only create node types that have visual components
-        if (
-            !definition ||
-            (definition.category !== "control" &&
-                definition.category !== "condition")
-        ) {
-            return;
-        }
+        if (!definition) return;
 
         const position = screenToFlowPosition({
             x: event.clientX,
             y: event.clientY,
         });
 
-        const newNode: Node = {
-            id: crypto.randomUUID(),
-            type: definition.category,
-            position,
-            origin: [0.5, 0.5],
-            data: {
-                label: definition.label,
-                variant: definition.id,
-            },
-        };
+        const newNode = createBehaviourNode(definition, position);
 
-        setNodes((currentNodes) => [...currentNodes, newNode]);
+        newNode.origin = [0.5, 0.5];
+
+        setNodes((currentNodes) => [
+            ...currentNodes.map((node) => ({
+                ...node,
+                selected: false,
+            })), {
+                ...newNode,
+                selected: true,
+            },
+        ]);
+        onSelectCanvasNode(newNode.id);
     };
 
     // Create nodes when double-clicked in the Node Library
@@ -133,13 +134,7 @@ function BehaviourEditor({ nodeToAdd }: BehaviourEditorProps) {
             (node) => node.id === nodeToAdd.id
         );
 
-        if (
-            !definition ||
-            (definition.category !== "control" &&
-                definition.category !== "condition")
-        ) {
-            return;
-        }
+        if (!definition) return;
 
         const bounds = editorRef.current.getBoundingClientRect();
 
@@ -148,28 +143,27 @@ function BehaviourEditor({ nodeToAdd }: BehaviourEditorProps) {
             y: bounds.top + bounds.height / 2,
         });
 
-        setNodes((currentNodes) => {
-            const newNodeCount = currentNodes.length - initialNodes.length;
+        const newNodeCount = nodes.length - initialNodes.length;
+        const column = newNodeCount % 3;
+        const row = Math.floor(newNodeCount / 3);
 
-            const column = newNodeCount % 3;
-            const row = Math.floor(newNodeCount / 3);
-
-            const newNode: Node = {
-                id: crypto.randomUUID(),
-                type: definition.category,
-                position: {
-                    x: centre.x - 80 + column * 200,
-                    y: centre.y - 35 + row * 120,
-                },
-                data: {
-                    label: definition.label,
-                    variant: definition.id,
-                },
-            };
-
-            return [...currentNodes, newNode];
+        const newNode = createBehaviourNode(definition, {
+            x: centre.x - 80 + column * 200,
+            y: centre.y - 35 + row * 120,
         });
-    }, [nodeToAdd, screenToFlowPosition, setNodes]);
+
+
+        setNodes((currentNodes) => [
+            ...currentNodes.map((node) => ({
+                ...node,
+                selected: false,
+            })),
+            newNode,
+        ]);
+
+        onSelectCanvasNode(newNode.id);
+
+    }, [nodeToAdd, screenToFlowPosition, setNodes, onSelectCanvasNode]);
 
     return (
         <div
@@ -185,6 +179,8 @@ function BehaviourEditor({ nodeToAdd }: BehaviourEditorProps) {
                 edges={edges}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onNodeClick={(_, node) => onSelectCanvasNode(node.id)}
+                onPaneClick={onClearCanvasSelection}
                 colorMode="dark"
                 fitView
             >

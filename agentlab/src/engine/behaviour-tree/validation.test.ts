@@ -116,5 +116,74 @@ describe("Behaviour tree connection validation", () => {
     const result = isValidConnection(connection, existingEdge);
 
     expect(result).toBe(true);
+  });
+
+  it("rejects connection targeting Root", () => {
+    const connection = {
+      source: "selector-1",
+      target: "root-1",
+      sourceHandle: null,
+      targetHandle: null,
+    };
+
+    const result = isValidConnection(connection, []);
+
+    expect(result).toBe(false);
+  });
+
+  it("rejects connections from Action nodes", () => {
+    const nodes = [
+      {
+        id: "patrol-1",
+        type: "action",
+        position: {x: 0, y: 0},
+        data: {label: "Patrol"},
+      },
+      {
+        id: "selector-1",
+        type: "control",
+        position: {x: 0, y: 0},
+        data: {label: "Selector"},
+      },
+    ];
+
+    const connection = {
+      source: "patrol-1",
+      target: "selector-1",
+      sourceHandle: null,
+      targetHandle: null,
+    };
+
+    const result = isValidConnection(connection, [], nodes);
+
+    expect(result).toBe(false);
+  });
+
+  it("rejects connections from Condition nodes", () => {
+    const nodes = [
+      {
+        id: "can-see-player-1",
+        type: "condition",
+        position: {x: 0, y: 0},
+        data: {label: "Can See Player"},
+      },
+      {
+        id: "patrol-1",
+        type: "action",
+        position: {x: 0, y: 0},
+        data: {label: "Patrol"},
+      },
+    ];
+
+    const connection = {
+      source: "can-see-player-1",
+      target: "patrol-1",
+      sourceHandle: null,
+      targetHandle: null,
+    };
+
+    const result = isValidConnection(connection, [], nodes);
+
+    expect(result).toBe(false);
   })
 });
