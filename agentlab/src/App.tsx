@@ -23,6 +23,11 @@ function App() {
     requestId: string;
   } | null>(null);
 
+  const [nodeToDelete, setNodeToDelete] = useState<{
+    id: string;
+    requestId: string;
+  } | null>(null);
+
   const [selectionSource, setSelectionSource] = useState<"library" | "canvas" | null>(null);
 
   const selectedNode = nodeDefinitions.find(
@@ -92,6 +97,13 @@ function App() {
     setInspectorWidth(clampedWidth);
   }
 
+  const handleDeleteCanvasNode = (nodeId: string) => {
+    setNodeToDelete({
+      id: nodeId,
+      requestId: crypto.randomUUID(),
+    });
+  };
+
   return (
     <div className="app">
 
@@ -160,6 +172,7 @@ function App() {
           <main className="editor">
             <BehaviourEditor
               nodeToAdd={nodeToAdd}
+              nodeToDelete={nodeToDelete}
               onSelectCanvasNode={handleSelectCanvasNode}
               onClearCanvasSelection={handleClearCanvasSelection}
             />
@@ -185,6 +198,7 @@ function App() {
                 {selectionSource === "canvas" ? (
                   <CanvasNodeInspector
                     selectedCanvasNodeId={selectedCanvasNodeId}
+                    onDeleteNode={handleDeleteCanvasNode}
                   />
                 ) : (
                   <Inspector

@@ -2,17 +2,19 @@ import { useNodes } from "@xyflow/react";
 
 type CanvasNodeInspectorProps = {
     selectedCanvasNodeId: string | null;
+    onDeleteNode: (nodeId: string) => void;
 }
 
 function CanvasNodeInspector({
     selectedCanvasNodeId,
+    onDeleteNode,
 }: CanvasNodeInspectorProps) {
     const nodes = useNodes();
 
     const selectedNode = selectedCanvasNodeId
         ? nodes.find((node) => node.id === selectedCanvasNodeId)
         : undefined;
-    
+
     if (!selectedNode) {
         return <p>No canvas node selected</p>;
     }
@@ -32,6 +34,16 @@ function CanvasNodeInspector({
             <p>
                 <strong>ID:</strong> {selectedNode.id}
             </p>
+
+            <button
+                type="button"
+                className="inspector-delete-button"
+                disabled={selectedNode.type === "root"}
+                onClick={() => onDeleteNode(selectedNode.id)}
+            >
+                Delete Node
+            </button>
+
         </div>
     );
 }

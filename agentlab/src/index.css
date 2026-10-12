@@ -416,3 +416,27 @@ body {
 .action-node-header svg {
   color: #6ee7b7;
 }
+
+.inspector-delete-button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 9px 12px;
+
+  background-color: #453036;
+  color: #fca5a5;
+  border: 1px solid #79434d;
+  border-radius: 6px;
+
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inspector-delete-button:hover:not(:disabled) {
+  background-color: #603942;
+}
+
+.inspector-delete-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

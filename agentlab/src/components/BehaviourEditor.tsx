@@ -11,7 +11,7 @@ import {
     type Edge,
     type Connection,
 } from "@xyflow/react";
-import { useEffect, useRef, type DragEvent } from "react";
+import { useCallback, useEffect, useRef, type DragEvent } from "react";
 import "@xyflow/react/dist/style.css";
 
 import RootNode from "./nodes/RootNode";
@@ -35,6 +35,7 @@ const initialNodes: Node[] = [
         id: "root-1",
         type: "root",
         position: { x: 100, y: 100 },
+        deletable: false,
         data: { label: "Root" },
     },
     {
@@ -62,17 +63,39 @@ type BehaviourEditorProps = {
         id: string;
         requestId: string;
     } | null;
-    onClearCanvasSelection: () => void;
 
+    nodeToDelete: {
+        id: string;
+        requestId: string;
+    } | null;
+
+    onClearCanvasSelection: () => void;
     onSelectCanvasNode: (nodeId: string) => void;
 };
 
-function BehaviourEditor({ nodeToAdd, onSelectCanvasNode, onClearCanvasSelection }: BehaviourEditorProps) {
+function BehaviourEditor({ nodeToAdd, nodeToDelete, onSelectCanvasNode, onClearCanvasSelection }: BehaviourEditorProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-    const { screenToFlowPosition } = useReactFlow();
+    const { screenToFlowPosition, deleteElements, getNode } = useReactFlow();
+
     const editorRef = useRef<HTMLDivElement>(null);
+    const placementCountRef = useRef(0);
+    const lastProccessRequestRef = useRef<string | null>(null);
+
+    const addNodeToCanvas = useCallback((newNode: Node) => {
+        setNodes((currentNodes) => [
+            ...currentNodes.map((node) => ({
+                ...node,
+                selected: false,
+            })),
+            {
+                ...newNode,
+                selected: true,
+            },
+        ]);
+        onSelectCanvasNode(newNode.id);
+    }, [setNodes, onSelectCanvasNode]);
 
     // Validate connections before adding edges
     const onConnect = (connection: Connection) => {
@@ -114,21 +137,18 @@ function BehaviourEditor({ nodeToAdd, onSelectCanvasNode, onClearCanvasSelection
 
         newNode.origin = [0.5, 0.5];
 
-        setNodes((currentNodes) => [
-            ...currentNodes.map((node) => ({
-                ...node,
-                selected: false,
-            })), {
-                ...newNode,
-                selected: true,
-            },
-        ]);
-        onSelectCanvasNode(newNode.id);
+        addNodeToCanvas(newNode);
     };
 
     // Create nodes when double-clicked in the Node Library
     useEffect(() => {
         if (!nodeToAdd || !editorRef.current) return;
+
+        if (lastProccessRequestRef.current === nodeToAdd.requestId) {
+            return;
+        }
+
+        lastProccessRequestRef.current = nodeToAdd.requestId;
 
         const definition = nodeDefinitions.find(
             (node) => node.id === nodeToAdd.id
@@ -143,9 +163,10 @@ function BehaviourEditor({ nodeToAdd, onSelectCanvasNode, onClearCanvasSelection
             y: bounds.top + bounds.height / 2,
         });
 
-        const newNodeCount = nodes.length - initialNodes.length;
-        const column = newNodeCount % 3;
-        const row = Math.floor(newNodeCount / 3);
+        const placementIndex = placementCountRef.current;
+
+        const column = placementIndex % 3;
+        const row = Math.floor(placementIndex / 3);
 
         const newNode = createBehaviourNode(definition, {
             x: centre.x - 80 + column * 200,
@@ -153,17 +174,30 @@ function BehaviourEditor({ nodeToAdd, onSelectCanvasNode, onClearCanvasSelection
         });
 
 
-        setNodes((currentNodes) => [
-            ...currentNodes.map((node) => ({
-                ...node,
-                selected: false,
-            })),
-            newNode,
-        ]);
+        addNodeToCanvas(newNode);
+        placementCountRef.current += 1;
 
-        onSelectCanvasNode(newNode.id);
+    }, [nodeToAdd, screenToFlowPosition, addNodeToCanvas]);
 
-    }, [nodeToAdd, screenToFlowPosition, setNodes, onSelectCanvasNode]);
+    useEffect(() => {
+        if(!nodeToDelete) return;
+
+        if (
+            lastProccessRequestRef.current === nodeToDelete.requestId
+        ) {
+            return;
+        }
+
+        lastProccessRequestRef.current = nodeToDelete.requestId;
+
+        const node = getNode(nodeToDelete.id);
+
+        if (!node || node.type === "root") return;
+
+        void deleteElements({
+            nodes: [{id: node.id}],
+        });
+    }, [nodeToDelete, getNode, deleteElements]);
 
     return (
         <div
@@ -173,6 +207,8 @@ function BehaviourEditor({ nodeToAdd, onSelectCanvasNode, onClearCanvasSelection
             onDrop={onDrop}
         >
             <ReactFlow
+                colorMode="dark"
+                fitView
                 nodes={nodes}
                 onNodesChange={onNodesChange}
                 nodeTypes={nodeTypes}
@@ -181,8 +217,16 @@ function BehaviourEditor({ nodeToAdd, onSelectCanvasNode, onClearCanvasSelection
                 onConnect={onConnect}
                 onNodeClick={(_, node) => onSelectCanvasNode(node.id)}
                 onPaneClick={onClearCanvasSelection}
-                colorMode="dark"
-                fitView
+                deleteKeyCode={["Delete", "Backspace"]}
+                onNodesDelete={(deleteNodes) => {
+                    const selectedNodeWasDeleted = deleteNodes.some(
+                        (node) => node.selected
+                    );
+
+                    if (selectedNodeWasDeleted) {
+                        onClearCanvasSelection();
+                    }
+                }}
             >
                 <Background color="#454750" gap={20} size={1} />
                 <Controls />
