@@ -28,6 +28,12 @@ function App() {
     requestId: string;
   } | null>(null);
 
+  const [nodeDataUpdate, setNodeDataUpdate] = useState<{
+    nodeId: string;
+    data: Record<string, unknown>;
+    requestId: string;
+  } | null>(null);
+
   const [selectionSource, setSelectionSource] = useState<"library" | "canvas" | null>(null);
 
   const selectedNode = nodeDefinitions.find(
@@ -104,6 +110,17 @@ function App() {
     });
   };
 
+  const handleUpdateNodeData = (
+    nodeId: string,
+    data: Record<string, unknown>
+  ) => {
+    setNodeDataUpdate({
+      nodeId,
+      data,
+      requestId: crypto.randomUUID(),
+    });
+  };
+
   return (
     <div className="app">
 
@@ -175,6 +192,7 @@ function App() {
               nodeToDelete={nodeToDelete}
               onSelectCanvasNode={handleSelectCanvasNode}
               onClearCanvasSelection={handleClearCanvasSelection}
+              nodeDataUpdate={nodeDataUpdate}
             />
           </main>
 
@@ -199,6 +217,7 @@ function App() {
                   <CanvasNodeInspector
                     selectedCanvasNodeId={selectedCanvasNodeId}
                     onDeleteNode={handleDeleteCanvasNode}
+                    onUpdateNodeData={handleUpdateNodeData}
                   />
                 ) : (
                   <Inspector

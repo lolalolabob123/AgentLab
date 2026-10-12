@@ -69,11 +69,17 @@ type BehaviourEditorProps = {
         requestId: string;
     } | null;
 
+    nodeDataUpdate: {
+        nodeId: string,
+        data: Record<string, unknown>;
+        requestId: string;
+    } | null;
+
     onClearCanvasSelection: () => void;
     onSelectCanvasNode: (nodeId: string) => void;
 };
 
-function BehaviourEditor({ nodeToAdd, nodeToDelete, onSelectCanvasNode, onClearCanvasSelection }: BehaviourEditorProps) {
+function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection }: BehaviourEditorProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
@@ -81,7 +87,9 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, onSelectCanvasNode, onClearC
 
     const editorRef = useRef<HTMLDivElement>(null);
     const placementCountRef = useRef(0);
-    const lastProccessRequestRef = useRef<string | null>(null);
+    const lastCreateRequestRef = useRef<string | null>(null);
+    const lastDeleteRequestRef = useRef<string | null>(null);
+    const lastProccessUpdateRef = useRef<string | null>(null);
 
     const addNodeToCanvas = useCallback((newNode: Node) => {
         setNodes((currentNodes) => [
@@ -144,11 +152,11 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, onSelectCanvasNode, onClearC
     useEffect(() => {
         if (!nodeToAdd || !editorRef.current) return;
 
-        if (lastProccessRequestRef.current === nodeToAdd.requestId) {
+        if (lastCreateRequestRef.current === nodeToAdd.requestId) {
             return;
         }
 
-        lastProccessRequestRef.current = nodeToAdd.requestId;
+        lastCreateRequestRef.current = nodeToAdd.requestId;
 
         const definition = nodeDefinitions.find(
             (node) => node.id === nodeToAdd.id
@@ -183,12 +191,12 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, onSelectCanvasNode, onClearC
         if(!nodeToDelete) return;
 
         if (
-            lastProccessRequestRef.current === nodeToDelete.requestId
+            lastDeleteRequestRef.current === nodeToDelete.requestId
         ) {
             return;
         }
 
-        lastProccessRequestRef.current = nodeToDelete.requestId;
+        lastDeleteRequestRef.current = nodeToDelete.requestId;
 
         const node = getNode(nodeToDelete.id);
 
@@ -198,6 +206,34 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, onSelectCanvasNode, onClearC
             nodes: [{id: node.id}],
         });
     }, [nodeToDelete, getNode, deleteElements]);
+
+    useEffect(() => {
+        if (!nodeDataUpdate) return;
+
+        if (
+            lastProccessUpdateRef.current === nodeDataUpdate.requestId
+        ) {
+            return;
+        }
+
+        lastProccessUpdateRef.current = nodeDataUpdate.requestId;
+
+        setNodes((currentNodes) =>
+            currentNodes.map((node) => {
+                if (node.id !== nodeDataUpdate.nodeId) {
+                    return node;
+                }
+
+                return {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        ...nodeDataUpdate.data,
+                    },
+                };
+            })
+        );
+    }, [nodeDataUpdate, setNodes]);
 
     return (
         <div
