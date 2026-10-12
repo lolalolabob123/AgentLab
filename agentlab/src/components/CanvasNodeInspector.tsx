@@ -1,5 +1,6 @@
 import { useNodes } from "@xyflow/react";
 import { useEffect, useState } from "react";
+import NumericInspectorField from "./NumericInspectorField";
 
 type CanvasNodeInspectorProps = {
     selectedCanvasNodeId: string | null;
