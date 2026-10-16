@@ -1,5 +1,5 @@
+
 import { useNodes } from "@xyflow/react";
-import { useEffect, useState } from "react";
 import NumericInspectorField from "./NumericInspectorField";
 
 type CanvasNodeInspectorProps = {
@@ -9,7 +9,7 @@ type CanvasNodeInspectorProps = {
         nodeId: string,
         data: Record<string, unknown>
     ) => void;
-}
+};
 
 function CanvasNodeInspector({
     selectedCanvasNodeId,
@@ -21,27 +21,6 @@ function CanvasNodeInspector({
     const selectedNode = selectedCanvasNodeId
         ? nodes.find((node) => node.id === selectedCanvasNodeId)
         : undefined;
-
-    const [speedInput, setSpeedInput] = useState("2");
-    const [radiusInput, setRadiusInput] = useState("100");
-
-    useEffect(() => {
-        if (selectedNode?.data.variant === "patrol") {
-            setSpeedInput(String(selectedNode.data.speed ?? 2));
-        }
-    }, [selectedNode?.id, selectedNode?.data.speed, selectedNode?.data.variant]);
-
-    useEffect(() => {
-        if (selectedNode?.data.variant === "patrol") {
-            setRadiusInput(
-                String(selectedNode.data.patrolRadius ?? 100)
-            );
-        }
-    }, [
-        selectedNode?.id,
-        selectedNode?.data.patrolRadius,
-        selectedNode?.data.variant,
-    ]);
 
     if (!selectedNode) {
         return <p>No canvas node selected</p>;
@@ -67,77 +46,85 @@ function CanvasNodeInspector({
                 <div className="inspector-section">
                     <h4>Patrol Settings</h4>
 
-                    <div className="inspector-field">
-                        <label htmlFor="patrol-speed">
-                            Speed
-                        </label>
+                    <NumericInspectorField
+                        key={`${selectedNode.id}-speed`}
+                        label="Speed"
+                        value={Number(selectedNode.data.speed ?? 2)}
+                        min={0.1}
+                        max={10}
+                        step={0.1}
+                        onChange={(speed) => {
+                            onUpdateNodeData(selectedNode.id, { speed });
+                        }}
+                    />
 
-                        <input
-                            id="patrol-speed"
-                            type="number"
-                            min={0.1}
-                            max={10}
-                            step={0.1}
-                            value={speedInput}
-                            onChange={(event) => {
-                                setSpeedInput(event.target.value);
-                            }}
-                            onBlur={() => {
-                                const speed = Number(speedInput);
+                    <NumericInspectorField
+                        key={`${selectedNode.id}-radius`}
+                        label="Patrol Radius"
+                        value={Number(selectedNode.data.patrolRadius ?? 100)}
+                        min={10}
+                        max={500}
+                        step={10}
+                        onChange={(radius) => {
+                            onUpdateNodeData(selectedNode.id, {
+                                patrolRadius: radius,
+                            });
+                        }}
+                    />
+                </div>
+            )}
 
-                                if (
-                                    speedInput.trim() === "" ||
-                                    !Number.isFinite(speed) ||
-                                    speed < 0.1 ||
-                                    speed > 10
-                                ) {
-                                    setSpeedInput(String(selectedNode.data.speed ?? 2));
-                                    return;
-                                }
+            {selectedNode.data.variant === "chase-player" && (
+                <div className="inspector-section">
+                    <h4>Chase Player Settings</h4>
 
-                                onUpdateNodeData(selectedNode.id, { speed });
-                            }}
-                        />
-                    </div>
+                    <NumericInspectorField
+                        key={`${selectedNode.id}-chase-speed`}
+                        label="Chase Speed"
+                        value={Number(selectedNode.data.chaseSpeed ?? 4)}
+                        min={0.1}
+                        max={10}
+                        step={0.1}
+                        onChange={(chaseSpeed) => {
+                            onUpdateNodeData(selectedNode.id, {
+                                chaseSpeed,
+                            });
+                        }}
+                    />
 
-                    <div className="inspector-field">
-                        <label htmlFor="patrol-radius">
-                            Patrol Radius
-                        </label>
+                    <NumericInspectorField
+                        key={`${selectedNode.id}-stop-distance`}
+                        label="Stop Distance"
+                        value={Number(selectedNode.data.stopDistance ?? 25)}
+                        min={0}
+                        max={200}
+                        step={5}
+                        onChange={(stopDistance) => {
+                            onUpdateNodeData(selectedNode.id, {
+                                stopDistance,
+                            });
+                        }}
+                    />
+                </div>
+            )}
 
-                        <input
-                            id="patrol-radius"
-                            type="number"
-                            min={10}
-                            max={500}
-                            step={10}
-                            value={radiusInput}
-                            onChange={(event) => {
-                                setRadiusInput(event.target.value);
-                            }}
-                            onBlur={() => {
-                                const radius = Number(radiusInput);
+            {selectedNode.data.variant === "can-see-player" && (
+                <div className="inspector-section">
+                    <h4>Detection Range</h4>
 
-                                if (
-                                    radiusInput.trim() === "" ||
-                                    !Number.isFinite(radius) ||
-                                    radius < 10 ||
-                                    radius > 500
-                                ) {
-                                    setRadiusInput(
-                                        String(selectedNode.data.patrolRadius ?? 100)
-                                    );
-                                    return;
-
-                                }
-
-                                onUpdateNodeData(selectedNode.id, {
-                                    patrolRadius: radius,
-                                });
-                            }}
-                        />
-
-                    </div>
+                    <NumericInspectorField
+                        key={`${selectedNode.id}-detection-range`}
+                        label="Detection Range"
+                        value={Number(selectedNode.data.detectionRange ?? 150)}
+                        min={10}
+                        max={1000}
+                        step={10}
+                        onChange={(detectionRange) => {
+                            onUpdateNodeData(selectedNode.id, {
+                                detectionRange,
+                            });
+                        }}
+                    />
                 </div>
             )}
 
@@ -149,7 +136,6 @@ function CanvasNodeInspector({
             >
                 Delete Node
             </button>
-
         </div>
     );
 }

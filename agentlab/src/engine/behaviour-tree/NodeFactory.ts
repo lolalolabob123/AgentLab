@@ -18,5 +18,12 @@ export function createBehaviourNode(
             }),
             selected: true,
         },
+        ...(definition.id === "chase-player" && {
+            chaseSpeed: 4,
+            stopDistance: 25,
+        }),
+        ...(definition.id === "can-see-player" && {
+            detectionRange: 150,
+        }),
     }
 };
