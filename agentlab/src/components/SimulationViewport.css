@@ -54,3 +54,11 @@
     background: #ef4444;
     border: 2px solid #fca5a5;
 }
+
+.simulation-world {
+    cursor: crosshair;
+}
+
+.simulation-player {
+    pointer-events: none;
+}
