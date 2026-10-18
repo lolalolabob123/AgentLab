@@ -1,0 +1,56 @@
+.simulation-viewport {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 240px;
+    background: #1b1e26;
+    color: #e5e7eb;
+}
+
+.simulation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid #373c48;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.simulation-status {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.simulation-world {
+    position: relative;
+    flex: 1;
+    min-height: 200px;
+    overflow: hidden;
+    background-color: #15181e;
+    background-image: radial-gradient(#343a46 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+.simulation-agent,
+.simulation-player {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.simulation-agent {
+    left: 30%;
+    top: 60%;
+    background: #10b981;
+    border: 2px solid #6ee7b7;
+}
+
+.simulation-player {
+    left: 75%;
+    top: 30%;
+    background: #ef4444;
+    border: 2px solid #fca5a5;
+}

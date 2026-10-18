@@ -63,11 +63,11 @@ body {
 
 .editor {
   display: flex;
-  min-height: 0;
   flex: 1;
+  min-height: 0;
   min-width: 0;
   background-color: #1c1e25;
-  padding: 16px;
+  overflow: hidden;
 }
 
 .toolbar-left {
@@ -239,21 +239,11 @@ body {
 }
 
 .behaviour-editor {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-}
-
-
-/* ========================================
-   Behaviour Editor
-======================================== */
-
-.behaviour-editor {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
   position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 
 /* ========================================
@@ -533,4 +523,51 @@ body {
 .clear-execution-button:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+}
+
+.workspace-center {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-editor {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.workspace-simulation {
+  flex: 0 0 260px;
+  min-height: 0;
+  border-top: 1px solid #373c48;
+}
+
+.simulation-resize-divider {
+  flex: 0 0 6px;
+  height: 6px;
+  min-height: 0;
+  padding: 0;
+  background: #292d37;
+  border-top: 1px solid #373c48;
+  cursor: row-resize;
+  touch-action: none;
+  position: relative;
+  z-index: 5;
+}
+
+.simulation-resize-divider:hover {
+  background: #475569;
+}
+
+.workspace-simulation {
+  min-height: 0;
+  overflow: hidden;
 }

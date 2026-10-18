@@ -6,6 +6,7 @@ import Inspector from "./components/Inspector";
 import BehaviourEditor from "./components/BehaviourEditor";
 import { ReactFlowProvider } from "@xyflow/react";
 import CanvasNodeInspector from "./components/CanvasNodeInspector";
+import SimulationViewport from "./components/SimulationViewport";
 
 function App() {
 
@@ -35,6 +36,8 @@ function App() {
   } | null>(null);
 
   const [selectionSource, setSelectionSource] = useState<"library" | "canvas" | null>(null);
+
+  const [simulationHeight, setSimulationHeight] = useState(260)
 
   const selectedNode = nodeDefinitions.find(
     (node) => node.id === selectedNodeId
@@ -80,7 +83,7 @@ function App() {
     );
 
     setLibraryWidth(clampedWidth);
-  }
+  };
 
   const handleInspectorresize = (
     event: React.PointerEvent<HTMLDivElement>
@@ -101,6 +104,26 @@ function App() {
     );
 
     setInspectorWidth(clampedWidth);
+  };
+
+  const handleSimulationResize = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (event.buttons !== 1) return;
+
+    const center = event.currentTarget.parentElement;
+    if (!center) return;
+
+    const rect = center.getBoundingClientRect();
+
+    const newHeight = rect.bottom - event.clientY;
+
+    const clampedHeight = Math.max(
+      180,
+      Math.min(rect.height - 180, newHeight)
+    );
+
+    setSimulationHeight(clampedHeight);
   }
 
   const handleDeleteCanvasNode = (nodeId: string) => {
@@ -187,13 +210,36 @@ function App() {
           )}
 
           <main className="editor">
-            <BehaviourEditor
-              nodeToAdd={nodeToAdd}
-              nodeToDelete={nodeToDelete}
-              onSelectCanvasNode={handleSelectCanvasNode}
-              onClearCanvasSelection={handleClearCanvasSelection}
-              nodeDataUpdate={nodeDataUpdate}
-            />
+            <div className="workspace-center">
+              <div className="workspace-editor">
+                <BehaviourEditor
+                  nodeToAdd={nodeToAdd}
+                  nodeToDelete={nodeToDelete}
+                  onSelectCanvasNode={handleSelectCanvasNode}
+                  onClearCanvasSelection={handleClearCanvasSelection}
+                  nodeDataUpdate={nodeDataUpdate}
+                />
+              </div>
+
+              <div
+                className="simulation-resize-divider"
+                onPointerDown={(event) => {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                }}
+                onPointerMove={handleSimulationResize}
+                onPointerUp={(event) => {
+                  if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                    event.currentTarget.releasePointerCapture(event.pointerId);
+                  }
+                }}
+              />
+
+              <div className="workspace-simulation"
+                style={{ height: simulationHeight, flex: "none" }}
+              >
+                <SimulationViewport />
+              </div>
+            </div>
           </main>
 
           {isInspectorOpen && (
