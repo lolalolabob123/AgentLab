@@ -1,21 +1,22 @@
-import {useRef, useState} from "react";
+import { useRef, useState } from "react";
 import type { PointerEvent } from "react";
+import type { Position } from "../engine/simulation/detection";
+import {
+    INITIAL_AGENT_POSITION,
+    INITIAL_PLAYER_POSITION,
+    worldToPercent,
+    percentToWorld
+} from "../engine/simulation/world";
 import "./SimulationViewport.css";
 
-type Position = {
-    x: number;
-    y: number;
-};
-
 export default function SimulationViewport() {
-    const [playerPosition, setPlayerPosition] = useState<Position>({
-        x: 75,
-        y: 30,
-    });
+    const [playerPosition, setPlayerPosition] = useState<Position>(
+        INITIAL_PLAYER_POSITION
+    );
 
     const worldRef = useRef<HTMLDivElement>(null);
 
-    const handleWorldClick = (event: PointerEvent<HTMLDivElement>) => {
+    const updatePlayerPosition = (event: PointerEvent<HTMLDivElement>) => {
         const world = worldRef.current;
         if (!world) return;
 
@@ -24,10 +25,31 @@ export default function SimulationViewport() {
         const x = ((event.clientX - rect.left) / rect.width) * 100;
         const y = ((event.clientY - rect.top) / rect.height) * 100;
 
-        setPlayerPosition({
+        const percentagePosition = {
             x: Math.max(0, Math.min(100, x)),
             y: Math.max(0, Math.min(100, y)),
-        });
+        };
+
+        setPlayerPosition(percentToWorld(percentagePosition));
+    };
+
+    const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+        if (event.button !== 0) return;
+
+        event.currentTarget.setPointerCapture(event.pointerId);
+        updatePlayerPosition(event);
+    };
+
+    const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+        if (event.buttons !== 1) return;
+
+        updatePlayerPosition(event);
+    };
+
+    const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
     };
 
     return (
@@ -40,16 +62,26 @@ export default function SimulationViewport() {
             <div
                 ref={worldRef}
                 className="simulation-world"
-                onPointerDown={handleWorldClick}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
             >
-                <div className="simulation-agent" title="AI Agent" />
-
-                <div 
+                <div
+                    className="simulation-detection-radius"
+                    style={{
+                        left: `${worldToPercent(INITIAL_AGENT_POSITION).x}%`,
+                        top: `${worldToPercent(INITIAL_AGENT_POSITION).y}%`,
+                    }}
+                >
+                    <div className="simulation-agent" title="AI Agent" />
+                </div>
+                <div
                     className="simulation-player"
                     title="Player"
                     style={{
-                        left: `${playerPosition.x}%`,
-                        top: `${playerPosition.y}%`,
+                        left: `${worldToPercent(playerPosition).x}%`,
+                        top: `${worldToPercent(playerPosition).y}%`,
                     }}
                 />
             </div>
