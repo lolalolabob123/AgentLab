@@ -196,7 +196,7 @@ body {
   border-color: #7c83a0;
 }
 
-.node-category + .node-category {
+.node-category+.node-category {
   margin-top: 16px;
 }
 
@@ -467,4 +467,22 @@ body {
 .inspector-field input:focus {
   outline: 1px solid #a78bfa;
   border-color: #a78bfa;
+}
+
+.react-flow__node.execution-success {
+  outline: 2px solid #22c55e;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.react-flow__node.execution-failure {
+  outline: 2px solid #ef4444;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.react-flow__node.execution-running {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+  border-radius: 6px;
 }

@@ -14,6 +14,8 @@ import {
 import { useCallback, useEffect, useRef, type DragEvent } from "react";
 import "@xyflow/react/dist/style.css";
 
+import type { NodeExecutionResult } from "../engine/behaviour-tree/executionTypes";
+
 import RootNode from "./nodes/RootNode";
 import ControlNode from "./nodes/ControlNode";
 import ConditionNode from "./nodes/ConditionNode";
@@ -78,6 +80,19 @@ type BehaviourEditorProps = {
     onClearCanvasSelection: () => void;
     onSelectCanvasNode: (nodeId: string) => void;
 };
+
+export function getExecutionClassName(
+    nodeId: string,
+    trace: NodeExecutionResult[]
+): string {
+    const result = trace.find((entry) => entry.nodeId === nodeId);
+
+    if (!result) {
+        return "";
+    }
+
+    return `execution-${result.status}`;
+}
 
 function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection }: BehaviourEditorProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
@@ -235,6 +250,12 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
         );
     }, [nodeDataUpdate, setNodes]);
 
+    const previewTrace: NodeExecutionResult[] = [
+        {nodeId: "root-1", status: "success"},
+        {nodeId: "selector-1", status: "running"},
+        {nodeId: "sequence-1", status: "failure"},
+    ];
+
     return (
         <div
             className="behaviour-editor"
@@ -245,7 +266,13 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
             <ReactFlow
                 colorMode="dark"
                 fitView
-                nodes={nodes}
+                nodes={nodes.map((node) => ({
+                    ...node,
+                    className: [
+                        node.className,
+                        getExecutionClassName(node.id, previewTrace),
+                    ].filter(Boolean).join(" "),
+                }))}
                 onNodesChange={onNodesChange}
                 nodeTypes={nodeTypes}
                 edges={edges}

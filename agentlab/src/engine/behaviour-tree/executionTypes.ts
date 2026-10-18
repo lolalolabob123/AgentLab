@@ -3,12 +3,12 @@ export type NodeStatus =
     | "failure"
     | "running";
 
-export type NodeExecuteResult = {
+export type NodeExecutionResult = {
     nodeId: string;
     status: NodeStatus;
 };
 
 export type TreeExecutionResult = {
     status: NodeStatus;
-    trace: NodeExecuteResult[];
+    trace: NodeExecutionResult[];
 }
