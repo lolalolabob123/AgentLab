@@ -7,3 +7,8 @@ export type NodeExecuteResult = {
     nodeId: string;
     status: NodeStatus;
 };
+
+export type TreeExecutionResult = {
+    status: NodeStatus;
+    trace: NodeExecuteResult[];
+}
