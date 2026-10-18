@@ -11,10 +11,12 @@ import {
     type Edge,
     type Connection,
 } from "@xyflow/react";
-import { useCallback, useEffect, useRef, type DragEvent } from "react";
+import { useCallback, useEffect, useRef, type DragEvent, useState } from "react";
 import "@xyflow/react/dist/style.css";
 
 import type { NodeExecutionResult } from "../engine/behaviour-tree/executionTypes";
+import { executeTreeWithTrace } from "../engine/behaviour-tree/executeTreeWithTrace";
+import type { NodeStatus } from "../engine/behaviour-tree/executionTypes";
 
 import RootNode from "./nodes/RootNode";
 import ControlNode from "./nodes/ControlNode";
@@ -97,6 +99,7 @@ export function getExecutionClassName(
 function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection }: BehaviourEditorProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+    const [executionTrace, setExecutionTrace] = useState<NodeExecutionResult[]>([]);
 
     const { screenToFlowPosition, deleteElements, getNode } = useReactFlow();
 
@@ -163,6 +166,29 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
         addNodeToCanvas(newNode);
     };
 
+    const runTreePreview = () => {
+        const leafStatuses: Record<string, NodeStatus> = {};
+
+        nodes.forEach((node) => {
+            if (node.type === "condition") {
+                leafStatuses[node.id] = "success";
+            }
+
+            if (node.type === "action") {
+                leafStatuses[node.id] = "running";
+            }
+        });
+
+        const result = executeTreeWithTrace(
+            "root-1",
+            nodes,
+            edges,
+            leafStatuses
+        );
+
+        setExecutionTrace(result.trace)
+    };
+
     // Create nodes when double-clicked in the Node Library
     useEffect(() => {
         if (!nodeToAdd || !editorRef.current) return;
@@ -203,7 +229,7 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
     }, [nodeToAdd, screenToFlowPosition, addNodeToCanvas]);
 
     useEffect(() => {
-        if(!nodeToDelete) return;
+        if (!nodeToDelete) return;
 
         if (
             lastDeleteRequestRef.current === nodeToDelete.requestId
@@ -218,7 +244,7 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
         if (!node || node.type === "root") return;
 
         void deleteElements({
-            nodes: [{id: node.id}],
+            nodes: [{ id: node.id }],
         });
     }, [nodeToDelete, getNode, deleteElements]);
 
@@ -250,12 +276,6 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
         );
     }, [nodeDataUpdate, setNodes]);
 
-    const previewTrace: NodeExecutionResult[] = [
-        {nodeId: "root-1", status: "success"},
-        {nodeId: "selector-1", status: "running"},
-        {nodeId: "sequence-1", status: "failure"},
-    ];
-
     return (
         <div
             className="behaviour-editor"
@@ -263,6 +283,24 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
             onDragOver={onDragOver}
             onDrop={onDrop}
         >
+            <div className="execution-controls">
+                <button
+                    type="button"
+                    onClick={runTreePreview}
+                    className="run-tree-button"
+                >
+                    Run Tree
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setExecutionTrace([])}
+                    className="clear-execution-button"
+                    disabled={executionTrace.length === 0}
+                >
+                    Clear
+                </button>
+            </div>
             <ReactFlow
                 colorMode="dark"
                 fitView
@@ -270,7 +308,7 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
                     ...node,
                     className: [
                         node.className,
-                        getExecutionClassName(node.id, previewTrace),
+                        getExecutionClassName(node.id, executionTrace),
                     ].filter(Boolean).join(" "),
                 }))}
                 onNodesChange={onNodesChange}
