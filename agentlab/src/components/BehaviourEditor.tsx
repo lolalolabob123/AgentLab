@@ -26,6 +26,7 @@ import ActionNode from "./nodes/ActionNode";
 import { isValidConnection } from "../engine/behaviour-tree/validation";
 import { nodeDefinitions } from "../data/nodeDefinitions";
 import { createBehaviourNode } from "../engine/behaviour-tree/NodeFactory";
+import type { Position } from "../engine/simulation/detection";
 
 const nodeTypes = {
     root: RootNode,
@@ -81,6 +82,7 @@ type BehaviourEditorProps = {
 
     onClearCanvasSelection: () => void;
     onSelectCanvasNode: (nodeId: string) => void;
+    playerPosition: Position;
 };
 
 export function getExecutionClassName(
@@ -96,7 +98,7 @@ export function getExecutionClassName(
     return `execution-${result.status}`;
 }
 
-function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection }: BehaviourEditorProps) {
+function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection, playerPosition }: BehaviourEditorProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const [executionTrace, setExecutionTrace] = useState<NodeExecutionResult[]>([]);

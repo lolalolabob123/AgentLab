@@ -1,20 +1,71 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useLayoutEffect } from "react";
 import type { PointerEvent } from "react";
+import { canSeePlayer, getDistance } from "../engine/simulation/detection";
 import type { Position } from "../engine/simulation/detection";
 import {
     INITIAL_AGENT_POSITION,
-    INITIAL_PLAYER_POSITION,
-    worldToPercent,
-    percentToWorld
+    DEFAULT_DETECTION_RANGE,
+    WORLD_WIDTH,
+    WORLD_HEIGHT,
 } from "../engine/simulation/world";
+import SimulationWorld from "./SImulationWorld";
+import { createCamera } from "../engine/simulation/camera";
 import "./SimulationViewport.css";
 
-export default function SimulationViewport() {
-    const [playerPosition, setPlayerPosition] = useState<Position>(
-        INITIAL_PLAYER_POSITION
+type SimulationViewportProps = {
+    playerPosition: Position;
+    onPlayerPositionChange: (position: Position) => void;
+};
+
+export default function SimulationViewport({
+    playerPosition,
+    onPlayerPositionChange,
+}: SimulationViewportProps) {
+    const playerDetected = canSeePlayer(
+        INITIAL_AGENT_POSITION,
+        playerPosition,
+        DEFAULT_DETECTION_RANGE
+    );
+
+    const playerDistance = getDistance(
+        INITIAL_AGENT_POSITION,
+        playerPosition
     );
 
     const worldRef = useRef<HTMLDivElement>(null);
+
+
+    const [aspectRatio, setAspectRatio] = useState(
+        WORLD_WIDTH / WORLD_HEIGHT
+    );
+
+    useLayoutEffect(() => {
+        const world = worldRef.current;
+        if (!world) return;
+
+        const updateSize = () => {
+            const { width, height } = world.getBoundingClientRect();
+
+            if (width > 0 && height > 0) {
+                setAspectRatio(width / height);
+            }
+        };
+
+        updateSize();
+
+        const observer = new ResizeObserver(updateSize);
+        observer.observe(world);
+
+        return () => observer.disconnect();
+    }, []);
+
+    const camera = createCamera(
+        undefined,
+        undefined,
+        aspectRatio
+    );
+
+
 
     const updatePlayerPosition = (event: PointerEvent<HTMLDivElement>) => {
         const world = worldRef.current;
@@ -22,16 +73,23 @@ export default function SimulationViewport() {
 
         const rect = world.getBoundingClientRect();
 
-        const x = ((event.clientX - rect.left) / rect.width) * 100;
-        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        const x =
+            camera.x +
+            ((event.clientX - rect.left) / rect.width) * camera.width;
 
-        const percentagePosition = {
-            x: Math.max(0, Math.min(100, x)),
-            y: Math.max(0, Math.min(100, y)),
-        };
+        const y =
+            camera.y +
+            ((event.clientY - rect.top) / rect.height) * camera.height;
 
-        setPlayerPosition(percentToWorld(percentagePosition));
+
+
+        onPlayerPositionChange({
+            x: Math.max(0, Math.min(WORLD_WIDTH, x)),
+            y: Math.max(0, Math.min(WORLD_HEIGHT, y)),
+        });
+
     };
+
 
     const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
         if (event.button !== 0) return;
@@ -56,35 +114,39 @@ export default function SimulationViewport() {
         <div className="simulation-viewport">
             <div className="simulation-header">
                 <span>AI Simulation</span>
-                <span className="simulation-status">Paused</span>
+                <div className="simulation-header-right">
+                    <span
+                        className={`simulation-detection-status ${playerDetected ? "detected" : "not-detected"
+                            }`}
+                    >
+                        {playerDetected ? "Player Detected" : "Player Not Detected"}
+                    </span>
+
+                    <span className="simulation-distance">
+                        Distance: {playerDistance.toFixed(1)} / {DEFAULT_DETECTION_RANGE}
+                    </span>
+
+                    <span className="simulation-status">Paused</span>
+                </div>
             </div>
 
-            <div
-                ref={worldRef}
-                className="simulation-world"
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
-            >
+            <div className="simulation-world-container">
                 <div
-                    className="simulation-detection-radius"
-                    style={{
-                        left: `${worldToPercent(INITIAL_AGENT_POSITION).x}%`,
-                        top: `${worldToPercent(INITIAL_AGENT_POSITION).y}%`,
-                    }}
+                    ref={worldRef}
+                    className="simulation-world"
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
                 >
-                    <div className="simulation-agent" title="AI Agent" />
+                    <SimulationWorld
+                        agentPosition={INITIAL_AGENT_POSITION}
+                        playerPosition={playerPosition}
+                        camera={camera}
+                    />
                 </div>
-                <div
-                    className="simulation-player"
-                    title="Player"
-                    style={{
-                        left: `${worldToPercent(playerPosition).x}%`,
-                        top: `${worldToPercent(playerPosition).y}%`,
-                    }}
-                />
             </div>
+
         </div>
     );
 }

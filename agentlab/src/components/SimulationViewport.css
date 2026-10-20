@@ -1,8 +1,9 @@
+
 .simulation-viewport {
     display: flex;
     flex-direction: column;
     height: 100%;
-    min-height: 240px;
+    min-height: 0;
     background: #1b1e26;
     color: #e5e7eb;
 }
@@ -17,20 +18,55 @@
     font-weight: 600;
 }
 
+.simulation-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .simulation-status {
     color: #9ca3af;
     font-weight: 400;
 }
 
+.simulation-detection-status {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.simulation-detection-status.detected {
+    color: #34d399;
+}
+
+.simulation-detection-status.not-detected {
+    color: #f87171;
+}
+
+/* Simulation world */
+
+.simulation-world-container {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
 .simulation-world {
     position: relative;
     flex: 1;
-    min-height: 200px;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+
     overflow: hidden;
-    background-color: #15181e;
-    background-image: radial-gradient(#343a46 1px, transparent 1px);
-    background-size: 24px 24px;
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
 }
+
+/* Agent and player */
 
 .simulation-agent,
 .simulation-player {
@@ -42,41 +78,43 @@
 }
 
 .simulation-agent {
-    left: 30%;
-    top: 60%;
     background: #10b981;
     border: 2px solid #6ee7b7;
 }
 
 .simulation-player {
-    left: 75%;
-    top: 30%;
     background: #ef4444;
     border: 2px solid #fca5a5;
-}
-
-.simulation-world {
-    cursor: crosshair;
-    touch-action: none;
-    user-select: none;
-}
-
-.simulation-player {
     pointer-events: none;
 }
 
+/* Detection radius */
+
 .simulation-detection-radius {
     position: absolute;
-    width: 200px;
-    height: 200px;
+    height: auto;
     border: 1px dashed rgba(52, 211, 153, 0.6);
     border-radius: 50%;
     background: rgba(52, 211, 153, 0.05);
     transform: translate(-50%, -50%);
     pointer-events: none;
+    box-sizing: border-box;
 }
 
 .simulation-detection-radius .simulation-agent {
     left: 50%;
     top: 50%;
+}
+
+.simulation-distance {
+    color: #a1a1aa;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.simulation-world-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #15181e;
 }

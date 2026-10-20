@@ -7,6 +7,8 @@ import BehaviourEditor from "./components/BehaviourEditor";
 import { ReactFlowProvider } from "@xyflow/react";
 import CanvasNodeInspector from "./components/CanvasNodeInspector";
 import SimulationViewport from "./components/SimulationViewport";
+import type { Position } from "./engine/simulation/detection";
+import { INITIAL_PLAYER_POSITION } from "./engine/simulation/world";
 
 function App() {
 
@@ -34,6 +36,10 @@ function App() {
     data: Record<string, unknown>;
     requestId: string;
   } | null>(null);
+
+  const [playerPosition, setPlayerPosition] = useState<Position>(
+    INITIAL_PLAYER_POSITION
+  );
 
   const [selectionSource, setSelectionSource] = useState<"library" | "canvas" | null>(null);
 
@@ -218,6 +224,7 @@ function App() {
                   onSelectCanvasNode={handleSelectCanvasNode}
                   onClearCanvasSelection={handleClearCanvasSelection}
                   nodeDataUpdate={nodeDataUpdate}
+                  playerPositon={playerPosition}
                 />
               </div>
 
@@ -237,7 +244,9 @@ function App() {
               <div className="workspace-simulation"
                 style={{ height: simulationHeight, flex: "none" }}
               >
-                <SimulationViewport />
+                <SimulationViewport 
+                  playerPosition={playerPosition}
+                  onPlayerPositionChange={setPlayerPosition}/>
               </div>
             </div>
           </main>
