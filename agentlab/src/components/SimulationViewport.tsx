@@ -3,7 +3,6 @@ import type { PointerEvent } from "react";
 import { canSeePlayer, getDistance } from "../engine/simulation/detection";
 import type { Position } from "../engine/simulation/detection";
 import {
-    INITIAL_AGENT_POSITION,
     DEFAULT_DETECTION_RANGE,
     WORLD_WIDTH,
     WORLD_HEIGHT,
@@ -13,22 +12,25 @@ import { createCamera } from "../engine/simulation/camera";
 import "./SimulationViewport.css";
 
 type SimulationViewportProps = {
+    agentPosition: Position;
     playerPosition: Position;
     onPlayerPositionChange: (position: Position) => void;
 };
 
 export default function SimulationViewport({
+    agentPosition,
     playerPosition,
     onPlayerPositionChange,
 }: SimulationViewportProps) {
+
     const playerDetected = canSeePlayer(
-        INITIAL_AGENT_POSITION,
+        agentPosition,
         playerPosition,
         DEFAULT_DETECTION_RANGE
     );
 
     const playerDistance = getDistance(
-        INITIAL_AGENT_POSITION,
+        agentPosition,
         playerPosition
     );
 
@@ -140,7 +142,7 @@ export default function SimulationViewport({
                     onPointerCancel={handlePointerUp}
                 >
                     <SimulationWorld
-                        agentPosition={INITIAL_AGENT_POSITION}
+                        agentPosition={agentPosition}
                         playerPosition={playerPosition}
                         camera={camera}
                     />

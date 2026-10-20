@@ -27,6 +27,11 @@ import { isValidConnection } from "../engine/behaviour-tree/validation";
 import { nodeDefinitions } from "../data/nodeDefinitions";
 import { createBehaviourNode } from "../engine/behaviour-tree/NodeFactory";
 import type { Position } from "../engine/simulation/detection";
+import { canSeePlayer } from "../engine/simulation/detection";
+import {
+    INITIAL_AGENT_POSITION,
+    DEFAULT_DETECTION_RANGE
+} from "../engine/simulation/world";
 
 const nodeTypes = {
     root: RootNode,
@@ -172,13 +177,31 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
         const leafStatuses: Record<string, NodeStatus> = {};
 
         nodes.forEach((node) => {
-            if (node.type === "condition") {
-                leafStatuses[node.id] = "success";
+
+            if (
+                node.type === "condition" &&
+                node.data.variant === "can-see-player"
+            ) {
+                const detectionRange =
+                    typeof node.data.detectionRange === "number"
+                        ? node.data.detectionRange
+                        : DEFAULT_DETECTION_RANGE;
+
+                const detected = canSeePlayer(
+                    INITIAL_AGENT_POSITION,
+                    playerPosition,
+                    detectionRange
+                );
+
+                leafStatuses[node.id] = detected
+                    ? "success"
+                    : "failure";
             }
 
             if (node.type === "action") {
                 leafStatuses[node.id] = "running";
             }
+
         });
 
         const result = executeTreeWithTrace(
