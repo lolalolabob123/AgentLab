@@ -11,7 +11,7 @@ import {
     type Edge,
     type Connection,
 } from "@xyflow/react";
-import { useCallback, useEffect, useRef, type DragEvent, useState } from "react";
+import { useCallback, useEffect, useRef, type DragEvent, useState, useImperativeHandle, forwardRef } from "react";
 import "@xyflow/react/dist/style.css";
 
 import type { NodeExecutionResult } from "../engine/behaviour-tree/executionTypes";
@@ -28,10 +28,8 @@ import { nodeDefinitions } from "../data/nodeDefinitions";
 import { createBehaviourNode } from "../engine/behaviour-tree/NodeFactory";
 import type { Position } from "../engine/simulation/detection";
 import { canSeePlayer } from "../engine/simulation/detection";
-import {
-    INITIAL_AGENT_POSITION,
-    DEFAULT_DETECTION_RANGE
-} from "../engine/simulation/world";
+import { DEFAULT_DETECTION_RANGE } from "../engine/simulation/world";
+import { getActiveAction } from "../engine/behaviour-tree/getActiveAction";
 
 const nodeTypes = {
     root: RootNode,
@@ -68,6 +66,13 @@ const initialNodes: Node[] = [
     },
 ];
 
+export type BehaviourEditorHandle = {
+    getActiveBehaviour: () => {
+        variant: string;
+        data: Record<string, unknown>;
+    } | null;
+};
+
 type BehaviourEditorProps = {
     nodeToAdd: {
         id: string;
@@ -88,6 +93,7 @@ type BehaviourEditorProps = {
     onClearCanvasSelection: () => void;
     onSelectCanvasNode: (nodeId: string) => void;
     playerPosition: Position;
+    agentPosition: Position;
 };
 
 export function getExecutionClassName(
@@ -103,7 +109,10 @@ export function getExecutionClassName(
     return `execution-${result.status}`;
 }
 
-function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection, playerPosition }: BehaviourEditorProps) {
+const BehaviourEditor = forwardRef<
+    BehaviourEditorHandle,
+    BehaviourEditorProps
+>(function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection, playerPosition, agentPosition }, ref) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const [executionTrace, setExecutionTrace] = useState<NodeExecutionResult[]>([]);
@@ -188,7 +197,7 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
                         : DEFAULT_DETECTION_RANGE;
 
                 const detected = canSeePlayer(
-                    INITIAL_AGENT_POSITION,
+                    agentPosition,
                     playerPosition,
                     detectionRange
                 );
@@ -301,6 +310,54 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
         );
     }, [nodeDataUpdate, setNodes]);
 
+    useImperativeHandle(ref, () => ({
+        getActiveBehaviour: () => {
+            const leafStatuses: Record<string, NodeStatus> = {};
+
+            nodes.forEach((node) => {
+                if (
+                    node.type === "condition" &&
+                    node.data.variant === "can-see-player"
+                ) {
+                    const range =
+                        typeof node.data.detectionRange === "number"
+                            ? node.data.detectionRange
+                            : DEFAULT_DETECTION_RANGE;
+
+                    leafStatuses[node.id] = canSeePlayer(
+                        agentPosition,
+                        playerPosition,
+                        range
+                    ) ? "success" : "failure";
+                }
+
+                if (node.type === "action") {
+                    leafStatuses[node.id] = "running";
+                }
+            });
+
+            const result = executeTreeWithTrace(
+                "root-1",
+                nodes,
+                edges,
+                leafStatuses
+            );
+
+            setExecutionTrace(result.trace);
+
+            const action = getActiveAction(nodes, result.trace);
+
+            if (!action) return null;
+
+            return {
+                variant: String(action.data.variant),
+                data: action.data,
+            };
+            console.log("Execution status:", result.status);
+            console.table(result.trace);
+        },
+    }), [nodes, edges, agentPosition, playerPosition, ref]);
+
     return (
         <div
             className="behaviour-editor"
@@ -359,6 +416,6 @@ function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanv
             </ReactFlow>
         </div>
     );
-}
+});
 
 export default BehaviourEditor;

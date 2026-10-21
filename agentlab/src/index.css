@@ -571,3 +571,10 @@ body {
   min-height: 0;
   overflow: hidden;
 }
+
+.simulation-step-button {
+  width: auto;
+  padding: 0 12px;
+  font-size: 12px;
+  border: 1px solid #475569;
+}
