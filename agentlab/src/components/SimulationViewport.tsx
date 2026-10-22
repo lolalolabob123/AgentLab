@@ -15,12 +15,14 @@ type SimulationViewportProps = {
     agentPosition: Position;
     playerPosition: Position;
     onPlayerPositionChange: (position: Position) => void;
+    isRunning: boolean;
 };
 
 export default function SimulationViewport({
     agentPosition,
     playerPosition,
     onPlayerPositionChange,
+    isRunning,
 }: SimulationViewportProps) {
 
     const playerDetected = canSeePlayer(
@@ -128,7 +130,9 @@ export default function SimulationViewport({
                         Distance: {playerDistance.toFixed(1)} / {DEFAULT_DETECTION_RANGE}
                     </span>
 
-                    <span className="simulation-status">Paused</span>
+                    <span className="simulation-playback-status">
+                        {isRunning ? "Running" : "Paused"}
+                    </span>
                 </div>
             </div>
 

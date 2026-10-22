@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from "react";
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { useCallback, useRef, useState, useEffect } from "react";
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Play, Pause } from "lucide-react";
 import NodeLibrary from "./components/NodeLibrary";
 import { nodeDefinitions } from "./data/nodeDefinitions";
 import Inspector from "./components/Inspector";
@@ -11,6 +11,7 @@ import type { Position } from "./engine/simulation/detection";
 import { INITIAL_PLAYER_POSITION, INITIAL_AGENT_POSITION } from "./engine/simulation/world";
 import type { BehaviourEditorHandle } from "./components/BehaviourEditor";
 import { moveTowards } from "./engine/simulation/movement";
+import { getPatrolTarget } from "./engine/simulation/patrol";
 
 function App() {
 
@@ -51,11 +52,16 @@ function App() {
     INITIAL_AGENT_POSITION
   );
 
+  const [patrolAngle, setPatrolAngle] = useState(0);
+
   const selectedNode = nodeDefinitions.find(
     (node) => node.id === selectedNodeId
   );
 
+  const [isSimulationRunning, setIsSimulationRunning] = useState(false);
+
   const behaviourEditorRef = useRef<BehaviourEditorHandle>(null);
+  const simulationStepRef = useRef<(deltaTime?: number) => void>(() => {});
 
   const handleAddNode = (id: string) => {
     setNodeToAdd({
@@ -160,72 +166,125 @@ function App() {
 
 
 
-const handleStepSimulation = () => {
+  const handleStepSimulation = (deltaTime = 0.5) => {
     const behaviour =
-        behaviourEditorRef.current?.getActiveBehaviour();
+      behaviourEditorRef.current?.getActiveBehaviour();
 
     if (!behaviour) {
-        console.log("No active AI behaviour");
-        return;
+      console.log("No active AI behaviour");
+      return;
     }
 
     console.log("Active AI behaviour:", behaviour.variant);
 
     if (behaviour.variant === "chase-player") {
-        const deltaTime = 0.5;
 
-        const chaseSpeed =
-            typeof behaviour.data.chaseSpeed === "number"
-                ? behaviour.data.chaseSpeed
-                : 4;
+      const chaseSpeed =
+        typeof behaviour.data.chaseSpeed === "number"
+          ? behaviour.data.chaseSpeed
+          : 4;
 
-        const stopDistance =
-            typeof behaviour.data.stopDistance === "number"
-                ? behaviour.data.stopDistance
-                : 25;
+      const stopDistance =
+        typeof behaviour.data.stopDistance === "number"
+          ? behaviour.data.stopDistance
+          : 25;
 
-        // Scale Inspector speed into world units per second.
-        const movementSpeed = chaseSpeed * 25;
+      // Scale Inspector speed into world units per second.
+      const movementSpeed = chaseSpeed * 25;
 
-        setAgentPosition((currentPosition) => {
-            const distance = Math.hypot(
-                playerPosition.x - currentPosition.x,
-                playerPosition.y - currentPosition.y
-            );
+      setAgentPosition((currentPosition) => {
+        const distance = Math.hypot(
+          playerPosition.x - currentPosition.x,
+          playerPosition.y - currentPosition.y
+        );
 
-            // Stop when close enough to the player.
-            if (distance <= stopDistance) {
-                return currentPosition;
-            }
+        // Stop when close enough to the player.
+        if (distance <= stopDistance) {
+          return currentPosition;
+        }
 
-            const nextPosition = moveTowards(
-                currentPosition,
-                playerPosition,
-                movementSpeed,
-                deltaTime
-            );
+        const nextPosition = moveTowards(
+          currentPosition,
+          playerPosition,
+          movementSpeed,
+          deltaTime
+        );
 
-            // Avoid moving inside the configured stopping distance.
-            const remainingDistance = Math.hypot(
-                playerPosition.x - nextPosition.x,
-                playerPosition.y - nextPosition.y
-            );
+        // Avoid moving inside the configured stopping distance.
+        const remainingDistance = Math.hypot(
+          playerPosition.x - nextPosition.x,
+          playerPosition.y - nextPosition.y
+        );
 
-            if (remainingDistance < stopDistance) {
-                return moveTowards(
-                    currentPosition,
-                    playerPosition,
-                    distance - stopDistance,
-                    1
-                );
-            }
+        if (remainingDistance < stopDistance) {
+          return moveTowards(
+            currentPosition,
+            playerPosition,
+            distance - stopDistance,
+            1
+          );
+        }
 
-            return nextPosition;
-        });
+        return nextPosition;
+      });
     }
-};
 
+    if (behaviour.variant === "patrol") {
+      const deltaTime = 0.5;
 
+      const patrolSpeed =
+        typeof behaviour.data.speed === "number"
+          ? behaviour.data.speed
+          : 2;
+      const patrolRadius =
+        typeof behaviour.data.patrolRadius === "number"
+          ? behaviour.data.patrolRadius
+          : 100;
+
+      const target = getPatrolTarget(
+        INITIAL_AGENT_POSITION,
+        patrolRadius,
+        patrolAngle
+      );
+
+      const movementSpeed = patrolSpeed * 25;
+
+      const nextPosition = moveTowards(
+        agentPosition,
+        target,
+        movementSpeed,
+        deltaTime
+      );
+
+      setAgentPosition(nextPosition);
+
+      const distanceToTarget = Math.hypot(
+        target.x - nextPosition.x,
+        target.y - nextPosition.y
+      );
+
+      if (distanceToTarget < 1) {
+        setPatrolAngle((currentAngle) =>
+          (currentAngle + Math.PI / 2) % (Math.PI * 2))
+      };
+    }
+  };
+
+  simulationStepRef.current = handleStepSimulation;
+
+  useEffect(() => {
+    if (!isSimulationRunning) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      simulationStepRef.current(0.05);
+    }, 50);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  });
 
   return (
     <div className="app">
@@ -249,14 +308,32 @@ const handleStepSimulation = () => {
           </button>
         </div>
 
-        <button
-          type="button"
-          className="toolbar-button simulation-step-button"
-          onClick={handleStepSimulation}
-          title="Advance simulation by 0.5 seconds"
-        >
-          Step
-        </button>
+        <div className="simulation-controls">
+          <button
+            type="button"
+            className={`toolbar-button simulation-run-button ${isSimulationRunning ? "is-running" : ""
+              }`}
+            onClick={() => setIsSimulationRunning((running) => !running)}
+            title={isSimulationRunning ? "Pause Simulation" : "Run Simulation"}
+          >
+            {isSimulationRunning ? (
+              <Pause size={14} />
+            ) : (
+              <Play size={24} />
+            )}
+            <span>{isSimulationRunning ? "Pause" : "Run"}</span>
+          </button>
+
+          <button
+            type="button"
+            className="toolbar-button simulation-step-button"
+            onClick={handleStepSimulation}
+            disabled={isSimulationRunning}
+            title="Advance simulation by 0.5 seconds"
+          >
+            Step
+          </button>
+        </div>
 
         <button
           type="button"
@@ -335,7 +412,9 @@ const handleStepSimulation = () => {
                 <SimulationViewport
                   agentPosition={agentPosition}
                   playerPosition={playerPosition}
-                  onPlayerPositionChange={setPlayerPosition} />
+                  onPlayerPositionChange={setPlayerPosition}
+                  isRunning={isSimulationRunning}
+                />
               </div>
             </div>
           </main>

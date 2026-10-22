@@ -478,51 +478,51 @@ body {
 }
 
 .run-tree-button {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 10;
-    padding: 8px 14px;
-    border: 1px solid #475569;
-    border-radius: 6px;
-    background: #334155;
-    color: #f8fafc;
-    cursor: pointer;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  padding: 8px 14px;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: #334155;
+  color: #f8fafc;
+  cursor: pointer;
 }
 
 .run-tree-button:hover {
-    background: #475569;
+  background: #475569;
 }
 
 .execution-controls {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 10;
-    display: flex;
-    gap: 8px;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
 }
 
 .execution-controls .run-tree-button {
-    position: static;
+  position: static;
 }
 
 .clear-execution-button {
-    padding: 8px 14px;
-    background: #292d37;
-    border: 1px solid #475569;
-    border-radius: 6px;
-    color: #d1d5db;
-    cursor: pointer;
+  padding: 8px 14px;
+  background: #292d37;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  color: #d1d5db;
+  cursor: pointer;
 }
 
 .clear-execution-button:hover:not(:disabled) {
-    background: #373d49;
+  background: #373d49;
 }
 
 .clear-execution-button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .workspace-center {
@@ -572,9 +572,68 @@ body {
   overflow: hidden;
 }
 
-.simulation-step-button {
+
+/* Simulation toolbar controls */
+
+.simulation-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.simulation-controls .toolbar-button {
   width: auto;
+  min-width: 64px;
+  height: 30px;
   padding: 0 12px;
-  font-size: 12px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
   border: 1px solid #475569;
+  border-radius: 6px;
+  background-color: #292d37;
+  color: #d1d5db;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.simulation-controls .toolbar-button:hover:not(:disabled) {
+  background-color: #373d49;
+  color: #f8fafc;
+}
+
+.simulation-controls .simulation-run-button {
+  background-color: #263d35;
+  border-color: #3d8065;
+  color: #86efac;
+}
+
+.simulation-controls .simulation-run-button:hover {
+  background-color: #315344;
+  color: #bbf7d0;
+}
+
+.simulation-controls .simulation-run-button.is-running {
+  background-color: #403825;
+  border-color: #947342;
+  color: #fcd34d;
+}
+
+.simulation-controls .simulation-run-button.is-running:hover {
+  background-color: #51462d;
+  color: #fde68a;
+}
+
+.simulation-controls .toolbar-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

@@ -30,6 +30,7 @@ import type { Position } from "../engine/simulation/detection";
 import { canSeePlayer } from "../engine/simulation/detection";
 import { DEFAULT_DETECTION_RANGE } from "../engine/simulation/world";
 import { getActiveAction } from "../engine/behaviour-tree/getActiveAction";
+import { loadBehaviourTree, saveBehaviourTree } from "../engine/persistence/treeStorage";
 
 const nodeTypes = {
     root: RootNode,
@@ -113,8 +114,19 @@ const BehaviourEditor = forwardRef<
     BehaviourEditorHandle,
     BehaviourEditorProps
 >(function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection, playerPosition, agentPosition }, ref) {
-    const [nodes, setNodes, onNodesChange] = useNodesState<Node>(initialNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+    const [savedTree] = useState(() => loadBehaviourTree());
+
+    const [nodes, setNodes, onNodesChange] =
+        useNodesState<Node>(savedTree?.nodes ?? initialNodes);
+
+    const [edges, setEdges, onEdgesChange] =
+        useEdgesState<Edge>(savedTree?.edges ?? []);
+    
+    useEffect(() => {
+        saveBehaviourTree(nodes, edges);
+    }, [nodes, edges]);
+
     const [executionTrace, setExecutionTrace] = useState<NodeExecutionResult[]>([]);
 
     const { screenToFlowPosition, deleteElements, getNode } = useReactFlow();
