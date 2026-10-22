@@ -12,6 +12,7 @@ import { INITIAL_PLAYER_POSITION, INITIAL_AGENT_POSITION } from "./engine/simula
 import type { BehaviourEditorHandle } from "./components/BehaviourEditor";
 import { moveTowards } from "./engine/simulation/movement";
 import { getPatrolTarget } from "./engine/simulation/patrol";
+import { SIMULATION_CONFIG } from "./engine/simulation/config";
 
 function App() {
 
@@ -62,6 +63,13 @@ function App() {
 
   const behaviourEditorRef = useRef<BehaviourEditorHandle>(null);
   const simulationStepRef = useRef<(deltaTime?: number) => void>(() => {});
+
+  const activeBehaviourRef = useRef<{
+    variant: string;
+    data: Record<string, unknown>
+  } | null>(null);
+
+  const aiUpdateTimerRef = useRef(0);
 
   const handleAddNode = (id: string) => {
     setNodeToAdd({
@@ -166,16 +174,22 @@ function App() {
 
 
 
-  const handleStepSimulation = (deltaTime = 0.5) => {
-    const behaviour =
-      behaviourEditorRef.current?.getActiveBehaviour();
+  const handleStepSimulation = (deltaTime: number = SIMULATION_CONFIG.manualStepDuration) => {
+    aiUpdateTimerRef.current += deltaTime;
 
-    if (!behaviour) {
-      console.log("No active AI behaviour");
-      return;
+    if (
+      activeBehaviourRef.current === null ||
+      aiUpdateTimerRef.current >= SIMULATION_CONFIG.aiUpdateInterval
+    ) {
+      activeBehaviourRef.current =
+        behaviourEditorRef.current?.getActiveBehaviour() ?? null;
+      
+      aiUpdateTimerRef.current = 0;
     }
 
-    console.log("Active AI behaviour:", behaviour.variant);
+    const behaviour = activeBehaviourRef.current;
+
+    if (!behaviour) return;
 
     if (behaviour.variant === "chase-player") {
 
@@ -190,7 +204,7 @@ function App() {
           : 25;
 
       // Scale Inspector speed into world units per second.
-      const movementSpeed = chaseSpeed * 25;
+      const movementSpeed = chaseSpeed * SIMULATION_CONFIG.movementSpeedMultiplier;
 
       setAgentPosition((currentPosition) => {
         const distance = Math.hypot(
@@ -230,8 +244,6 @@ function App() {
     }
 
     if (behaviour.variant === "patrol") {
-      const deltaTime = 0.5;
-
       const patrolSpeed =
         typeof behaviour.data.speed === "number"
           ? behaviour.data.speed
@@ -247,7 +259,7 @@ function App() {
         patrolAngle
       );
 
-      const movementSpeed = patrolSpeed * 25;
+      const movementSpeed = patrolSpeed * SIMULATION_CONFIG.movementSpeedMultiplier;
 
       const nextPosition = moveTowards(
         agentPosition,
@@ -277,14 +289,32 @@ function App() {
       return;
     }
 
-    const interval = window.setInterval(() => {
-      simulationStepRef.current(0.05);
-    }, 50);
+    let animationFrameId: number;
+    let previousTime: number | null = null;
+
+    const animate = (currentTime: number) => {
+      if (previousTime === null) {
+        previousTime = currentTime;
+      }
+
+      const deltaTime = Math.min(
+        (currentTime - previousTime) / 1000,
+        SIMULATION_CONFIG.maxDeltaTime
+      );
+
+      previousTime = currentTime;
+
+      simulationStepRef.current(deltaTime);
+
+      animationFrameId = window.requestAnimationFrame(animate);
+    };
+
+    animationFrameId = window.requestAnimationFrame(animate);
 
     return () => {
-      window.clearInterval(interval);
+      window.cancelAnimationFrame(animationFrameId);
     };
-  });
+  }, [isSimulationRunning]);
 
   return (
     <div className="app">
@@ -313,7 +343,14 @@ function App() {
             type="button"
             className={`toolbar-button simulation-run-button ${isSimulationRunning ? "is-running" : ""
               }`}
-            onClick={() => setIsSimulationRunning((running) => !running)}
+            onClick={() => {
+              if (!isSimulationRunning) {
+                activeBehaviourRef.current = null;
+                aiUpdateTimerRef.current = 0;
+              }
+
+              setIsSimulationRunning((running) => !running);
+            }}
             title={isSimulationRunning ? "Pause Simulation" : "Run Simulation"}
           >
             {isSimulationRunning ? (
@@ -327,7 +364,11 @@ function App() {
           <button
             type="button"
             className="toolbar-button simulation-step-button"
-            onClick={handleStepSimulation}
+            onClick={() => {
+              activeBehaviourRef.current = null;
+              aiUpdateTimerRef.current = 0;
+              handleStepSimulation();
+            }}
             disabled={isSimulationRunning}
             title="Advance simulation by 0.5 seconds"
           >

@@ -232,7 +232,22 @@ const BehaviourEditor = forwardRef<
             leafStatuses
         );
 
-        setExecutionTrace(result.trace)
+        setExecutionTrace((previoiusTrace) => {
+            const nextTrace = result.trace;
+
+            const isUnchanged =
+                previoiusTrace.length === nextTrace.length &&
+                previoiusTrace.every((entry, index) => {
+                    const nextEntry = nextTrace[index];
+
+                    return (
+                        entry.nodeId === nextEntry.nodeId &&
+                        entry.status === nextEntry.status
+                    );
+                });
+
+                return isUnchanged ? previoiusTrace : nextTrace;
+        });
     };
 
     // Create nodes when double-clicked in the Node Library
