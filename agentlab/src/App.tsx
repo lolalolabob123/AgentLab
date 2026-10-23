@@ -62,7 +62,7 @@ function App() {
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
 
   const behaviourEditorRef = useRef<BehaviourEditorHandle>(null);
-  const simulationStepRef = useRef<(deltaTime?: number) => void>(() => {});
+  const simulationStepRef = useRef<(deltaTime?: number) => void>(() => { });
 
   const activeBehaviourRef = useRef<{
     variant: string;
@@ -175,21 +175,17 @@ function App() {
 
 
   const handleStepSimulation = (deltaTime: number = SIMULATION_CONFIG.manualStepDuration) => {
-    aiUpdateTimerRef.current += deltaTime;
 
-    if (
-      activeBehaviourRef.current === null ||
-      aiUpdateTimerRef.current >= SIMULATION_CONFIG.aiUpdateInterval
-    ) {
-      activeBehaviourRef.current =
-        behaviourEditorRef.current?.getActiveBehaviour() ?? null;
-      
-      aiUpdateTimerRef.current = 0;
+    const behaviour =
+      behaviourEditorRef.current?.getActiveBehaviour();
+
+    if (!behaviour) {
+      return;
     }
 
-    const behaviour = activeBehaviourRef.current;
-
     if (!behaviour) return;
+
+    console.log("Selected AI behaviour:", behaviour.variant);
 
     if (behaviour.variant === "chase-player") {
 

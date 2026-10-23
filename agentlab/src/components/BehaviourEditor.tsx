@@ -122,7 +122,7 @@ const BehaviourEditor = forwardRef<
 
     const [edges, setEdges, onEdgesChange] =
         useEdgesState<Edge>(savedTree?.edges ?? []);
-    
+
     useEffect(() => {
         saveBehaviourTree(nodes, edges);
     }, [nodes, edges]);
@@ -246,7 +246,7 @@ const BehaviourEditor = forwardRef<
                     );
                 });
 
-                return isUnchanged ? previoiusTrace : nextTrace;
+            return isUnchanged ? previoiusTrace : nextTrace;
         });
     };
 
@@ -351,11 +351,13 @@ const BehaviourEditor = forwardRef<
                             ? node.data.detectionRange
                             : DEFAULT_DETECTION_RANGE;
 
-                    leafStatuses[node.id] = canSeePlayer(
+                    const detected = canSeePlayer(
                         agentPosition,
                         playerPosition,
                         range
-                    ) ? "success" : "failure";
+                    );
+
+                    leafStatuses[node.id] = detected ? "success" : "failure";
                 }
 
                 if (node.type === "action") {
@@ -370,6 +372,20 @@ const BehaviourEditor = forwardRef<
                 leafStatuses
             );
 
+            console.table(
+                edges
+                    .filter((edge) => edge.source === "selector-1")
+                    .map((edge, index) => {
+                        const node = nodes.find((node) => node.id === edge.target);
+
+                        return {
+                            index,
+                            nodeId: edge.target,
+                            type: node?.type,
+                            variant: node?.data.variant,
+                        };
+                    })
+            );
             setExecutionTrace(result.trace);
 
             const action = getActiveAction(nodes, result.trace);
