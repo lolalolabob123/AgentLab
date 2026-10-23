@@ -131,7 +131,7 @@ describe("Behaviour tree execution", () => {
             {
                 id: "chase-1",
                 type: "action",
-                position: {x: 100, y: 200},
+                position: {x: 100, y: 300},
                 data: {
                     label: "Chase Player",
                     variant: "chase-player",
@@ -147,7 +147,7 @@ describe("Behaviour tree execution", () => {
             },
             {
                 id: "edge-2",
-                source: "sequence-2",
+                source: "sequence-1",
                 target: "condition-1",
             },
             {
@@ -195,7 +195,7 @@ describe("Behaviour tree execution", () => {
                 {
                     id: "chase-1",
                     type: "action",
-                    position: {x: 100, y: 100},
+                    position: {x: 100, y: 200},
                     data: {
                         label: "Chase Player",
                         variant: "chase-player",

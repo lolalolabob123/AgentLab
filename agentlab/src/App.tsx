@@ -185,8 +185,6 @@ function App() {
 
     if (!behaviour) return;
 
-    console.log("Selected AI behaviour:", behaviour.variant);
-
     if (behaviour.variant === "chase-player") {
 
       const chaseSpeed =

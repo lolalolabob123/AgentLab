@@ -19,7 +19,7 @@ export function executeTree(
     }
 
     if (node.type === "root") {
-        const children = getChildNodeIds(nodeId, edges);
+        const children = getChildNodeIds(nodeId, edges, nodes);
 
         if (children.length === 0) {
             return "failure";
@@ -34,7 +34,7 @@ export function executeTree(
     }
 
     if (node.type === "control" && node.data.variant === "sequence") {
-        const children = getChildNodeIds(nodeId, edges);
+        const children = getChildNodeIds(nodeId, edges, nodes);
 
         for (const childId of children) {
             const status = executeTree(
@@ -57,7 +57,7 @@ export function executeTree(
     }
 
     if (node.type === "control" && node.data.variant === "selector") {
-        const children = getChildNodeIds(nodeId, edges);
+        const children = getChildNodeIds(nodeId, edges, nodes);
 
         for (const childId of children) {
             const status = executeTree(
