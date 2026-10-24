@@ -88,7 +88,6 @@ describe("Behaviour tree execution tracing", () => {
         });
     });
 
-
     it("traces a Selector falling back to Patrol", () => {
         const nodes: Node[] = [
             {
@@ -154,6 +153,78 @@ describe("Behaviour tree execution tracing", () => {
                 { nodeId: "condition-1", status: "failure" },
                 { nodeId: "sequence-1", status: "failure" },
                 { nodeId: "patrol-1", status: "running" },
+                { nodeId: "selector-1", status: "running" },
+                { nodeId: "root-1", status: "running" },
+            ],
+        });
+    });
+
+
+    it("prioritises chase when the player is detected", () => {
+        const nodes: Node[] = [
+            {
+                id: "root-1",
+                type: "root",
+                position: { x: 0, y: 0 },
+                data: { label: "Root" },
+            },
+            {
+                id: "selector-1",
+                type: "control",
+                position: { x: 0, y: 100 },
+                data: { label: "Selector", variant: "selector" },
+            },
+            {
+                id: "sequence-1",
+                type: "control",
+                position: { x: -100, y: 150 },
+                data: { label: "Sequence", variant: "sequence" },
+            },
+            {
+                id: "condition-1",
+                type: "condition",
+                position: { x: -150, y: 300 },
+                data: { label: "Can See Player?", variant: "can-see-player" },
+            },
+            {
+                id: "chase-1",
+                type: "action",
+                position: { x: -50, y: 400 },
+                data: { label: "Chase Player", variant: "chase-player" },
+            },
+            {
+                id: "patrol-1",
+                type: "action",
+                position: { x: 100, y: 250 },
+                data: { label: "Patrol", variant: "patrol" },
+            },
+        ];
+
+        const edges: Edge[] = [
+            { id: "e1", source: "root-1", target: "selector-1" },
+            { id: "e2", source: "selector-1", target: "sequence-1" },
+            { id: "e3", source: "selector-1", target: "patrol-1" },
+            { id: "e4", source: "sequence-1", target: "condition-1" },
+            { id: "e5", source: "sequence-1", target: "chase-1" },
+        ];
+
+        const result = executeTreeWithTrace(
+            "root-1",
+            nodes,
+            edges,
+            {
+                "condition-1": "success",
+                "chase-1": "running",
+                "patrol-1": "running",
+            }
+        );
+
+        expect(result).toEqual({
+            status: "running",
+            trace: [
+                { nodeId: "condition-1", status: "success" },
+                { nodeId: "chase-1", status: "running" },
+                { nodeId: "sequence-1", status: "running" },
                 { nodeId: "selector-1", status: "running" },
                 { nodeId: "root-1", status: "running" },
             ],

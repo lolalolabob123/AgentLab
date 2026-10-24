@@ -253,7 +253,7 @@ describe("Behaviour tree execution", () => {
             {
                 id: "sequence-1",
                 type: "control",
-                position: {x: -100, y: 200},
+                position: {x: -100, y: 150},
                 data: {label: "Sequence", variant: "sequence"},
             },
             {
@@ -268,7 +268,7 @@ describe("Behaviour tree execution", () => {
             {
                 id: "chase-1",
                 type: "action",
-                position: {x: -50, y: 300},
+                position: {x: -50, y: 400},
                 data: {
                     label: "Chase Player",
                     variant: "chase-player"
@@ -277,7 +277,7 @@ describe("Behaviour tree execution", () => {
             {
                 id: "patrol-1",
                 type: "action",
-                position: {x: 100, y: 200},
+                position: {x: 100, y: 250},
                 data: {
                     label: "Patrol",
                     variant: "patrol",

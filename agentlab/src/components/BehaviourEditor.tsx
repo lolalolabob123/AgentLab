@@ -11,7 +11,7 @@ import {
     type Edge,
     type Connection,
 } from "@xyflow/react";
-import { useCallback, useEffect, useRef, type DragEvent, useState, useImperativeHandle, forwardRef } from "react";
+import { useCallback, useEffect, useRef, type DragEvent, useState, useImperativeHandle, forwardRef, useMemo } from "react";
 import "@xyflow/react/dist/style.css";
 
 import type { NodeExecutionResult } from "../engine/behaviour-tree/executionTypes";
@@ -31,6 +31,8 @@ import { canSeePlayer } from "../engine/simulation/detection";
 import { DEFAULT_DETECTION_RANGE } from "../engine/simulation/world";
 import { getActiveAction } from "../engine/behaviour-tree/getActiveAction";
 import { loadBehaviourTree, saveBehaviourTree } from "../engine/persistence/treeStorage";
+import { getChildNodeIds } from "../engine/behaviour-tree/treeTraversal";
+import { validateBehaviourTree } from "../engine/behaviour-tree/validateBehaviourTree";
 
 const nodeTypes = {
     root: RootNode,
@@ -123,11 +125,52 @@ const BehaviourEditor = forwardRef<
     const [edges, setEdges, onEdgesChange] =
         useEdgesState<Edge>(savedTree?.edges ?? []);
 
+    const validationIssues = useMemo(
+        () => validateBehaviourTree(nodes, edges),
+        [nodes, edges]
+    );
+
+    const errorCount = validationIssues.filter(
+        (issues) => issues.severity === "error"
+    ).length;
+
+    const warningCount = validationIssues.filter(
+        (issue) => issue.severity === "warning"
+    ).length;
+
+    const priorityByEdgeId = new Map<string, number>();
+
+    for (const node of nodes) {
+        if (
+            node.type !== "control" ||
+            (node.data.variant !== "selector" &&
+                node.data.variant !== "sequence")
+        ) {
+            continue;
+        }
+
+        const childIds = getChildNodeIds(node.id, edges, nodes);
+
+        childIds.forEach((childId, index) => {
+            const edge = edges.find(
+                (edge) =>
+                    edge.source === node.id &&
+                    edge.target === childId
+            );
+
+            if (edge) {
+                priorityByEdgeId.set(edge.id, index + 1);
+            }
+        });
+    }
+
     useEffect(() => {
         saveBehaviourTree(nodes, edges);
     }, [nodes, edges]);
 
     const [executionTrace, setExecutionTrace] = useState<NodeExecutionResult[]>([]);
+
+    const [isProblemsOpen, setIsProblemsOpen] = useState(false);
 
     const { screenToFlowPosition, deleteElements, getNode } = useReactFlow();
 
@@ -371,21 +414,6 @@ const BehaviourEditor = forwardRef<
                 edges,
                 leafStatuses
             );
-
-            console.table(
-                edges
-                    .filter((edge) => edge.source === "selector-1")
-                    .map((edge, index) => {
-                        const node = nodes.find((node) => node.id === edge.target);
-
-                        return {
-                            index,
-                            nodeId: edge.target,
-                            type: node?.type,
-                            variant: node?.data.variant,
-                        };
-                    })
-            );
             setExecutionTrace(result.trace);
 
             const action = getActiveAction(nodes, result.trace);
@@ -396,8 +424,6 @@ const BehaviourEditor = forwardRef<
                 variant: String(action.data.variant),
                 data: action.data,
             };
-            console.log("Execution status:", result.status);
-            console.table(result.trace);
         },
     }), [nodes, edges, agentPosition, playerPosition, ref]);
 
@@ -426,6 +452,84 @@ const BehaviourEditor = forwardRef<
                     Clear
                 </button>
             </div>
+
+            <div className="problems-container">
+                <button
+                    type="button"
+                    className="problems-indicator"
+                    onClick={() => setIsProblemsOpen((open) => !open)}
+                    aria-expanded={isProblemsOpen}
+                    aria-controls="problems-panel"
+                >
+                    <span className="problems-indicator-title">
+                        Problems
+                    </span>
+
+                    <span className="problems-count error">
+                        <span aria-hidden="true">✕</span>
+                        {errorCount}
+                    </span>
+
+                    <span className="problems-count warning">
+                        <span aria-hidden="true">⚠</span>
+                        {warningCount}
+                    </span>
+
+                    <span aria-hidden="true">
+                        {isProblemsOpen ? "▴" : "▾"}
+                    </span>
+                </button>
+
+                {isProblemsOpen && (
+                    <div
+                        id="problems-panel"
+                        className="problems-panel"
+                    >
+                        {validationIssues.length === 0 ? (
+                            <p>No problems detected.</p>
+                        ) : (
+                            validationIssues.map((issue, index) => (
+                                <div
+                                    key={`${issue.nodeId}-${index}`}
+                                    className={`problem-item ${issue.severity}`}
+                                >
+                                    <span aria-hidden="true">
+                                        {issue.severity === "error" ? "✕" : "⚠"}
+                                    </span>
+
+                                    <span>{issue.message}</span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {executionTrace.length > 0 && (
+                <div className="execution-legend">
+                    <span className="execution-legend-title">
+                        Execution Status
+                    </span>
+
+                    <div className="execution-legend-items">
+                        <span className="execution-legend-item">
+                            <span className="execution-legend-line running" />
+                            Running / Success
+                        </span>
+
+                        <span className="execution-legend-item">
+                            <span className="execution-legend-line failure" />
+                            Failure
+                        </span>
+
+                        <span className="execution-legend-item">
+                            <span className="execution-legend-line inactive" />
+                            Not Visited
+                        </span>
+                    </div>
+                </div>
+            )}
+
             <ReactFlow
                 colorMode="dark"
                 fitView
@@ -438,7 +542,49 @@ const BehaviourEditor = forwardRef<
                 }))}
                 onNodesChange={onNodesChange}
                 nodeTypes={nodeTypes}
-                edges={edges}
+                edges={edges.map((edge) => {
+                    const priority = priorityByEdgeId.get(edge.id);
+
+                    const targetExecution = executionTrace.find(
+                        (entry) => entry.nodeId === edge.target
+                    );
+
+                    const isExecutedEdge =
+                        executionTrace.some((entry) => entry.nodeId === edge.source) &&
+                        targetExecution !== undefined;
+
+                    const edgeColor =
+                        !isExecutedEdge
+                            ? "#555965"
+                            : targetExecution.status === "failure"
+                                ? "#ef4444"
+                                : "#38bdf8";
+
+                    return {
+                        ...edge,
+                        label: priority !== undefined ? String(priority) : undefined,
+                        labelStyle: {
+                            fill: "#e5e7eb",
+                            fontSize: 12,
+                            fontWeight: 600,
+                        },
+                        labelBgStyle: {
+                            fill: "#252830",
+                            fillOpacity: 0.95,
+                        },
+                        labelBgPadding: [6, 4] as [number, number],
+                        labelBgBorderRadius: 5,
+
+                        animated: false,
+
+                        style: {
+                            ...edge.style,
+                            stroke: edgeColor,
+                            strokeWidth: isExecutedEdge ? 2 : 1.5,
+                            opacity: isExecutedEdge ? 1 : 0.65,
+                        },
+                    };
+                })}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
                 onNodeClick={(_, node) => onSelectCanvasNode(node.id)}
