@@ -172,7 +172,7 @@ const BehaviourEditor = forwardRef<
 
     const [isProblemsOpen, setIsProblemsOpen] = useState(false);
 
-    const { screenToFlowPosition, deleteElements, getNode } = useReactFlow();
+    const { screenToFlowPosition, deleteElements, getNode, setCenter, getZoom } = useReactFlow();
 
     const editorRef = useRef<HTMLDivElement>(null);
     const placementCountRef = useRef(0);
@@ -489,16 +489,44 @@ const BehaviourEditor = forwardRef<
                             <p>No problems detected.</p>
                         ) : (
                             validationIssues.map((issue, index) => (
-                                <div
+                                <button
                                     key={`${issue.nodeId}-${index}`}
+                                    type="button"
                                     className={`problem-item ${issue.severity}`}
+                                    disabled={!issue.nodeId}
+                                    onClick={() => {
+                                        setNodes((currentNodes) =>
+                                            currentNodes.map((node) => ({
+                                                ...node,
+                                                selected: node.id === issue.nodeId,
+                                            }))
+                                        );
+
+                                        onSelectCanvasNode(issue.nodeId);
+
+                                        const node = getNode(issue.nodeId);
+
+                                        if (node) {
+                                            const width = node.measured?.width ?? 160;
+                                            const height = node.measured?.height ?? 80;
+
+                                            void setCenter(
+                                                node.position.x + width / 2,
+                                                node.position.y + height / 2,
+                                                {
+                                                    zoom: getZoom(),
+                                                    duration: 400,
+                                                }
+                                            );
+                                        }
+                                    }}
                                 >
                                     <span aria-hidden="true">
                                         {issue.severity === "error" ? "✕" : "⚠"}
                                     </span>
 
                                     <span>{issue.message}</span>
-                                </div>
+                                </button>
                             ))
                         )}
                     </div>

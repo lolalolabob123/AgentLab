@@ -64,5 +64,23 @@ export function validateBehaviourTree(
         }
     }
 
+    for (const node of nodes) {
+        if (node.type === "root") {
+            continue;
+        }
+
+        const hasParent = edges.some(
+            (edge) => edge.target === node.id
+        );
+
+        if (!hasParent) {
+            issues.push({
+                nodeId: node.id,
+                severity: "warning",
+                message: `${String(node.data.label ?? "Node")} is not connected to the behaviour tree.`,
+            });
+        }
+    }
+
     return issues;
 }
