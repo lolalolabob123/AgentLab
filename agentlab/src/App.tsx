@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from "react";
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Play, Pause } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Play, Pause, RotateCcw } from "lucide-react";
 import NodeLibrary from "./components/NodeLibrary";
 import { nodeDefinitions } from "./data/nodeDefinitions";
 import Inspector from "./components/Inspector";
@@ -24,6 +24,11 @@ function App() {
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedCanvasNodeId, setSelectedCanvasNodeId] = useState<string | null>(null);
+
+  const [validationCounts, setValidationCounts] = useState({
+    errors: 0,
+    warnings: 0,
+  })
 
   const [nodeToAdd, setNodeToAdd] = useState<{
     id: string;
@@ -60,6 +65,8 @@ function App() {
   );
 
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
+  const [activeBehaviourName, setActiveBehaviourName] =
+    useState<string>("Idle");
 
   const behaviourEditorRef = useRef<BehaviourEditorHandle>(null);
   const simulationStepRef = useRef<(deltaTime?: number) => void>(() => { });
@@ -172,16 +179,44 @@ function App() {
     });
   };
 
+  const handleResetSimulation = () => {
+    setIsSimulationRunning(false);
 
+    setAgentPosition({ ...INITIAL_AGENT_POSITION });
+    setPlayerPosition({ ...INITIAL_PLAYER_POSITION });
+
+    setPatrolAngle(0);
+    setActiveBehaviourName("Idle");
+
+    activeBehaviourRef.current = null;
+    aiUpdateTimerRef.current = 0;
+  }
 
   const handleStepSimulation = (deltaTime: number = SIMULATION_CONFIG.manualStepDuration) => {
+
+    if (!behaviourEditorRef.current?.canRunSimulation()) {
+      setIsSimulationRunning(false);
+      return;
+    }
 
     const behaviour =
       behaviourEditorRef.current?.getActiveBehaviour();
 
     if (!behaviour) {
+      setActiveBehaviourName("Idle");
       return;
     }
+
+    const behaviourName =
+      behaviour.variant === "chase-player"
+        ? "Chasing Player"
+        : behaviour.variant === "patrol"
+          ? "Patrolling"
+          : "Idle";
+
+    setActiveBehaviourName((previous) =>
+      previous === behaviourName ? previous : behaviourName
+    );
 
     if (!behaviour) return;
 
@@ -338,12 +373,19 @@ function App() {
             className={`toolbar-button simulation-run-button ${isSimulationRunning ? "is-running" : ""
               }`}
             onClick={() => {
-              if (!isSimulationRunning) {
-                activeBehaviourRef.current = null;
-                aiUpdateTimerRef.current = 0;
+              if (isSimulationRunning) {
+                setIsSimulationRunning(false);
+                return;
               }
 
-              setIsSimulationRunning((running) => !running);
+              if (!behaviourEditorRef.current?.canRunSimulation()) {
+                return;
+              }
+
+              activeBehaviourRef.current = null;
+              aiUpdateTimerRef.current = 0;
+
+              setIsSimulationRunning(true);
             }}
             title={isSimulationRunning ? "Pause Simulation" : "Run Simulation"}
           >
@@ -368,7 +410,19 @@ function App() {
           >
             Step
           </button>
+
+          <button
+            type="button"
+            className="toolbar-button simulation-reset-button"
+            onClick={handleResetSimulation}
+            title="Reset simulation to initial state"
+            aria-label="Reset Simulation"
+          >
+            <RotateCcw size={15} />
+            <span>Reset</span>
+          </button>
         </div>
+
 
         <button
           type="button"
@@ -425,6 +479,7 @@ function App() {
                   nodeDataUpdate={nodeDataUpdate}
                   playerPosition={playerPosition}
                   agentPosition={agentPosition}
+                  onValidationChange={setValidationCounts}
                 />
               </div>
 
@@ -449,6 +504,7 @@ function App() {
                   playerPosition={playerPosition}
                   onPlayerPositionChange={setPlayerPosition}
                   isRunning={isSimulationRunning}
+                  activeBehaviourName={activeBehaviourName}
                 />
               </div>
             </div>
@@ -489,7 +545,36 @@ function App() {
       </ReactFlowProvider>
 
       <footer className="status-bar">
-        Ready
+        <div className="status-bar-left">
+          <span
+            className={`status-indicator ${validationCounts.errors > 0
+              ? "error"
+              : isSimulationRunning
+                ? "running"
+                : "ready"
+              }`}
+          />
+
+          <span>
+            {validationCounts.errors > 0
+              ? "Tree validation failed"
+              : isSimulationRunning
+                ? "Simulation running"
+                : "Ready"}
+          </span>
+        </div>
+
+        <div className="status-bar-right">
+          <span className="status-error-count">
+            {validationCounts.errors}{" "}
+            {validationCounts.errors === 1 ? "error" : "errors"}
+          </span>
+
+          <span className="status-warning-count">
+            {validationCounts.warnings}{" "}
+            {validationCounts.warnings === 1 ? "warning" : "warnings"}
+          </span>
+        </div>
       </footer>
 
     </div>

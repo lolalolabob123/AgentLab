@@ -1,4 +1,5 @@
 import type { Node, Edge } from "@xyflow/react";
+import { getChildNodeIds } from "./treeTraversal";
 
 export type ValidationIssue = {
     nodeId: string;
@@ -64,20 +65,74 @@ export function validateBehaviourTree(
         }
     }
 
-    for (const node of nodes) {
-        if (node.type === "root") {
+    const reachableNodes = new Set<string>();
+    const toVisit = [rootNode.id];
+
+    while (toVisit.length > 0) {
+        const current = toVisit.pop()!;
+
+        if (reachableNodes.has(current)) {
             continue;
         }
 
-        const hasParent = edges.some(
-            (edge) => edge.target === node.id
-        );
+        reachableNodes.add(current);
 
-        if (!hasParent) {
+        const children = edges
+            .filter((edge) => edge.source === current)
+            .map((edge => edge.target));
+        toVisit.push(...children);
+    }
+
+    for (const node of nodes) {
+        if (node.id === rootNode.id) {
+            continue;
+        }
+
+        if (!reachableNodes.has(node.id)) {
             issues.push({
                 nodeId: node.id,
                 severity: "warning",
                 message: `${String(node.data.label ?? "Node")} is not connected to the behaviour tree.`,
+            });
+        }
+    }
+
+    for (const node of nodes) {
+        if (
+            node.type !== "control" ||
+            node.data.variant !== "sequence"
+        ) {
+            continue;
+        }
+
+        const childIds = getChildNodeIds(node.id, edges, nodes);
+
+        const children = childIds
+            .map((id) => nodes.find((child) => child.id === id))
+            .filter((child): child is Node => child !== undefined);
+
+        const chaseIndex = children.findIndex(
+            (child) =>
+                child.type === "action" &&
+                child.data.variant === "chase-player"
+        );
+
+        const detectionIndex = children.findIndex(
+            (child) =>
+                child.type === "condition" &&
+                child.data.variant === "can-see-player"
+        );
+
+        if (
+            chaseIndex !== -1 &&
+            detectionIndex !== -1 &&
+            chaseIndex < detectionIndex
+        ) {
+            issues.push({
+                nodeId: node.id,
+                severity: "warning",
+                message: 
+                "Chase Player executes before Can See Player in this Sequence.",
             });
         }
     }

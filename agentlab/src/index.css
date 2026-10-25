@@ -38,13 +38,43 @@ body {
 }
 
 .status-bar {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  border-top: 1px solid #3a3d46;
-  height: 28px;
-  flex-shrink: 0;
-  background-color: #25272f;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.status-bar-left,
+.status-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-indicator.ready {
+    background: #4ade80;
+}
+
+.status-indicator.running {
+    background: #38bdf8;
+}
+
+.status-indicator.error {
+    background: #ef4444;
+}
+
+.status-error-count {
+    color: #ef4444;
+}
+
+.status-warning-count {
+    color: #f59e0b;
 }
 
 .workspace {
@@ -815,4 +845,22 @@ body {
 .problem-item:disabled {
     cursor: default;
     opacity: 0.7;
+}
+
+.simulation-active-behaviour {
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.simulation-active-behaviour.patrolling {
+    color: #34d399;
+}
+
+.simulation-active-behaviour.chasing {
+    color: #f59e0b;
+}
+
+.simulation-active-behaviour.idle {
+    color: #9ca3af;
 }

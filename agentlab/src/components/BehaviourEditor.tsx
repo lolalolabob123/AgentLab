@@ -74,6 +74,13 @@ export type BehaviourEditorHandle = {
         variant: string;
         data: Record<string, unknown>;
     } | null;
+
+    canRunSimulation: () => boolean;
+
+    getValidationCounts: () => {
+        errors: number;
+        warnings: number;
+    }
 };
 
 type BehaviourEditorProps = {
@@ -92,6 +99,11 @@ type BehaviourEditorProps = {
         data: Record<string, unknown>;
         requestId: string;
     } | null;
+
+    onValidationChange: (counts: {
+        errors: number;
+        warnings: number;
+    }) => void;
 
     onClearCanvasSelection: () => void;
     onSelectCanvasNode: (nodeId: string) => void;
@@ -115,7 +127,7 @@ export function getExecutionClassName(
 const BehaviourEditor = forwardRef<
     BehaviourEditorHandle,
     BehaviourEditorProps
->(function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection, playerPosition, agentPosition }, ref) {
+>(function BehaviourEditor({ nodeToAdd, nodeToDelete, nodeDataUpdate, onSelectCanvasNode, onClearCanvasSelection, playerPosition, agentPosition, onValidationChange, }, ref) {
 
     const [savedTree] = useState(() => loadBehaviourTree());
 
@@ -137,6 +149,13 @@ const BehaviourEditor = forwardRef<
     const warningCount = validationIssues.filter(
         (issue) => issue.severity === "warning"
     ).length;
+
+    useEffect(() => {
+        onValidationChange({
+            errors: errorCount,
+            warnings: warningCount,
+        });
+    }, [errorCount, warningCount, onValidationChange]);
 
     const priorityByEdgeId = new Map<string, number>();
 
@@ -238,6 +257,13 @@ const BehaviourEditor = forwardRef<
     };
 
     const runTreePreview = () => {
+
+        if (errorCount > 0) {
+            setExecutionTrace([]);
+            setIsProblemsOpen(true);
+            return;
+        }
+
         const leafStatuses: Record<string, NodeStatus> = {};
 
         nodes.forEach((node) => {
@@ -381,6 +407,22 @@ const BehaviourEditor = forwardRef<
     }, [nodeDataUpdate, setNodes]);
 
     useImperativeHandle(ref, () => ({
+
+        canRunSimulation: () => {
+            if (errorCount > 0) {
+                setExecutionTrace([]);
+                setIsProblemsOpen(true);
+                return false;
+            }
+
+            return true;
+        },
+
+        getValidationCounts: () => ({
+            errors: errorCount,
+            warnings: warningCount,
+        }),
+
         getActiveBehaviour: () => {
             const leafStatuses: Record<string, NodeStatus> = {};
 
@@ -425,7 +467,7 @@ const BehaviourEditor = forwardRef<
                 data: action.data,
             };
         },
-    }), [nodes, edges, agentPosition, playerPosition, ref]);
+    }), [nodes, edges, agentPosition, playerPosition, ref, errorCount]);
 
     return (
         <div

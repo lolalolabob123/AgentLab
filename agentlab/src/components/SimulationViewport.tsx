@@ -16,6 +16,7 @@ type SimulationViewportProps = {
     playerPosition: Position;
     onPlayerPositionChange: (position: Position) => void;
     isRunning: boolean;
+    activeBehaviourName: string;
 };
 
 export default function SimulationViewport({
@@ -23,6 +24,7 @@ export default function SimulationViewport({
     playerPosition,
     onPlayerPositionChange,
     isRunning,
+    activeBehaviourName,
 }: SimulationViewportProps) {
 
     const playerDetected = canSeePlayer(
@@ -119,6 +121,18 @@ export default function SimulationViewport({
             <div className="simulation-header">
                 <span>AI Simulation</span>
                 <div className="simulation-header-right">
+
+                    <span
+                        className={`simulation-active-behaviour ${activeBehaviourName === "Chasing Player"
+                                ? "chasing"
+                                : activeBehaviourName === "Patrolling"
+                                    ? "patrolling"
+                                    : "idle"
+                            }`}
+                    >
+                        {activeBehaviourName}
+                    </span>
+
                     <span
                         className={`simulation-detection-status ${playerDetected ? "detected" : "not-detected"
                             }`}
