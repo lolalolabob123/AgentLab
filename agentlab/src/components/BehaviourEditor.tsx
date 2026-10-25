@@ -80,7 +80,8 @@ export type BehaviourEditorHandle = {
     getValidationCounts: () => {
         errors: number;
         warnings: number;
-    }
+    };
+    clearExecutionTrace: () => void;
 };
 
 type BehaviourEditorProps = {
@@ -188,6 +189,26 @@ const BehaviourEditor = forwardRef<
     }, [nodes, edges]);
 
     const [executionTrace, setExecutionTrace] = useState<NodeExecutionResult[]>([]);
+
+    const updateExecutionTrace = useCallback(
+        (nextTrace: NodeExecutionResult[]) => {
+            setExecutionTrace((previousTrace) => {
+                const isUnchanged =
+                    previousTrace.length === nextTrace.length &&
+                    previousTrace.every((entry, index) => {
+                        const nextEntry = nextTrace[index];
+
+                        return (
+                            entry.nodeId === nextEntry.nodeId &&
+                            entry.status === nextEntry.status
+                        );
+                    });
+
+                return isUnchanged ? previousTrace : nextTrace;
+            });
+        },
+        []
+    );
 
     const [isProblemsOpen, setIsProblemsOpen] = useState(false);
 
@@ -301,22 +322,7 @@ const BehaviourEditor = forwardRef<
             leafStatuses
         );
 
-        setExecutionTrace((previoiusTrace) => {
-            const nextTrace = result.trace;
-
-            const isUnchanged =
-                previoiusTrace.length === nextTrace.length &&
-                previoiusTrace.every((entry, index) => {
-                    const nextEntry = nextTrace[index];
-
-                    return (
-                        entry.nodeId === nextEntry.nodeId &&
-                        entry.status === nextEntry.status
-                    );
-                });
-
-            return isUnchanged ? previoiusTrace : nextTrace;
-        });
+        updateExecutionTrace(result.trace);
     };
 
     // Create nodes when double-clicked in the Node Library
@@ -408,6 +414,10 @@ const BehaviourEditor = forwardRef<
 
     useImperativeHandle(ref, () => ({
 
+        clearExecutionTrace: () => {
+            setExecutionTrace([]);
+        },
+
         canRunSimulation: () => {
             if (errorCount > 0) {
                 setExecutionTrace([]);
@@ -456,7 +466,8 @@ const BehaviourEditor = forwardRef<
                 edges,
                 leafStatuses
             );
-            setExecutionTrace(result.trace);
+
+            updateExecutionTrace(result.trace);
 
             const action = getActiveAction(nodes, result.trace);
 
@@ -467,7 +478,7 @@ const BehaviourEditor = forwardRef<
                 data: action.data,
             };
         },
-    }), [nodes, edges, agentPosition, playerPosition, ref, errorCount]);
+    }), [nodes, edges, agentPosition, playerPosition, ref, errorCount, updateExecutionTrace]);
 
     return (
         <div
@@ -584,7 +595,12 @@ const BehaviourEditor = forwardRef<
                     <div className="execution-legend-items">
                         <span className="execution-legend-item">
                             <span className="execution-legend-line running" />
-                            Running / Success
+                            Running
+                        </span>
+
+                        <span className="execution-legend-item">
+                            <span className="execution-legend-line success" />
+                            Success
                         </span>
 
                         <span className="execution-legend-item">
@@ -594,7 +610,7 @@ const BehaviourEditor = forwardRef<
 
                         <span className="execution-legend-item">
                             <span className="execution-legend-line inactive" />
-                            Not Visited
+                            Not Executed
                         </span>
                     </div>
                 </div>
@@ -628,7 +644,9 @@ const BehaviourEditor = forwardRef<
                             ? "#555965"
                             : targetExecution.status === "failure"
                                 ? "#ef4444"
-                                : "#38bdf8";
+                                : targetExecution.status === "success"
+                                    ? "#4ade80"
+                                    : "#38bdf8";
 
                     return {
                         ...edge,

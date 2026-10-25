@@ -190,6 +190,8 @@ function App() {
 
     activeBehaviourRef.current = null;
     aiUpdateTimerRef.current = 0;
+
+    behaviourEditorRef.current?.clearExecutionTrace();
   }
 
   const handleStepSimulation = (deltaTime: number = SIMULATION_CONFIG.manualStepDuration) => {

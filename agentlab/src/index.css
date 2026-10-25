@@ -864,3 +864,22 @@ body {
 .simulation-active-behaviour.idle {
     color: #9ca3af;
 }
+
+.execution-legend-line.success {
+    background-color: #4ade80;
+}
+
+.react-flow__node.execution-running {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+.react-flow__node.execution-success {
+    outline: 2px solid #4ade80;
+    outline-offset: 2px;
+}
+
+.react-flow__node.execution-failure {
+    outline: 2px solid #ef4444;
+    outline-offset: 2px;
+}
