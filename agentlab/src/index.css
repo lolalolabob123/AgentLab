@@ -883,3 +883,66 @@ body {
     outline: 2px solid #ef4444;
     outline-offset: 2px;
 }
+
+.execution-history-container {
+  flex-shrink: 0;
+  border-top: 1px solid #363b44;
+  background: #20232b;
+}
+
+.execution-history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  color: #d1d5db;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.execution-history-toggle:hover {
+  background: #2b3039;
+}
+
+.execution-history-count {
+  margin-left: auto;
+  color: #9ca3af;
+}
+
+.execution-history {
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 8px 12px;
+  border-top: 1px solid #363b44;
+}
+
+.execution-history-header {
+  display: none;
+}
+
+.execution-history-empty {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.execution-history-event {
+  display: flex;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 12px;
+  border-bottom: 1px solid #303540;
+}
+
+.execution-history-time {
+  color: #9ca3af;
+  min-width: 42px;
+  font-variant-numeric: tabular-nums;
+}
+
+.execution-history-message {
+  color: #e5e7eb;
+}

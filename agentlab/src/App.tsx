@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from "react";
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Play, Pause, RotateCcw } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Play, Pause, RotateCcw, ChevronRight, ChevronsDown } from "lucide-react";
 import NodeLibrary from "./components/NodeLibrary";
 import { nodeDefinitions } from "./data/nodeDefinitions";
 import Inspector from "./components/Inspector";
@@ -13,6 +13,8 @@ import type { BehaviourEditorHandle } from "./components/BehaviourEditor";
 import { moveTowards } from "./engine/simulation/movement";
 import { getPatrolTarget } from "./engine/simulation/patrol";
 import { SIMULATION_CONFIG } from "./engine/simulation/config";
+import type { SimulationHistoryEvent } from "./engine/simulation/historyTypes";
+import ExecutionHistory from "./components/ExecutionHistory";
 
 function App() {
 
@@ -68,8 +70,15 @@ function App() {
   const [activeBehaviourName, setActiveBehaviourName] =
     useState<string>("Idle");
 
+  const [simulationHistory, setSimulationHistory] =
+    useState<SimulationHistoryEvent[]>([]);
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
   const behaviourEditorRef = useRef<BehaviourEditorHandle>(null);
   const simulationStepRef = useRef<(deltaTime?: number) => void>(() => { });
+  const simulationTimeRef = useRef(0);
+  const lastRecordedBehaviourRef = useRef("Idle");
 
   const activeBehaviourRef = useRef<{
     variant: string;
@@ -192,7 +201,36 @@ function App() {
     aiUpdateTimerRef.current = 0;
 
     behaviourEditorRef.current?.clearExecutionTrace();
+
+    setSimulationHistory([]);
+    simulationTimeRef.current = 0;
+    lastRecordedBehaviourRef.current = "Idle";
   }
+
+  const recordBehaviourChange = (
+    behaviourName: string,
+    deltaTime: number
+  ) => {
+    simulationTimeRef.current += deltaTime;
+
+    if (lastRecordedBehaviourRef.current === behaviourName) {
+      return;
+    }
+
+    lastRecordedBehaviourRef.current = behaviourName;
+
+    const event: SimulationHistoryEvent = {
+      id: crypto.randomUUID(),
+      timestamp: simulationTimeRef.current,
+      type: "behaviour-changed",
+      message: behaviourName,
+    };
+
+    setSimulationHistory((previous) => [
+      ...previous,
+      event,
+    ]);
+  };
 
   const handleStepSimulation = (deltaTime: number = SIMULATION_CONFIG.manualStepDuration) => {
 
@@ -220,7 +258,7 @@ function App() {
       previous === behaviourName ? previous : behaviourName
     );
 
-    if (!behaviour) return;
+    recordBehaviourChange(behaviourName, deltaTime);
 
     if (behaviour.variant === "chase-player") {
 
@@ -497,17 +535,51 @@ function App() {
                   }
                 }}
               />
-
-              <div className="workspace-simulation"
-                style={{ height: simulationHeight, flex: "none" }}
+              <div
+                className="workspace-simulation"
+                style={{
+                  height: simulationHeight,
+                  flex: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 0,
+                }}
               >
-                <SimulationViewport
-                  agentPosition={agentPosition}
-                  playerPosition={playerPosition}
-                  onPlayerPositionChange={setPlayerPosition}
-                  isRunning={isSimulationRunning}
-                  activeBehaviourName={activeBehaviourName}
-                />
+                <div style={{flex: 1, minHeight: 0}}>
+                  <SimulationViewport
+                    agentPosition={agentPosition}
+                    playerPosition={playerPosition}
+                      onPlayerPositionChange={setPlayerPosition}
+                      isRunning={isSimulationRunning}
+                      activeBehaviourName={activeBehaviourName}
+                  />
+                </div>
+
+                <div className="execution-history-container">
+                  <button
+                    type="button"
+                    className="execution-history-toggle"
+                    onClick={() => setIsHistoryOpen((previous) => !previous)}
+                    aria-expanded={isHistoryOpen}
+                  >
+                    {isHistoryOpen ? (
+                      <ChevronsDown size={15} />
+                    ) : (
+                      <ChevronRight size={15} />
+                    )}
+
+                    <span>History</span>
+
+                    <span className="execution-history-count">
+                      {simulationHistory.length}
+                    </span>
+                  </button>
+
+                  {isHistoryOpen && (
+                    <ExecutionHistory events={simulationHistory} />
+                  )}
+                </div>
+
               </div>
             </div>
           </main>
