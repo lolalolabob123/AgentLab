@@ -79,6 +79,9 @@ function App() {
   const simulationStepRef = useRef<(deltaTime?: number) => void>(() => { });
   const simulationTimeRef = useRef(0);
   const lastRecordedBehaviourRef = useRef("Idle");
+  const lastRecordedDetectionrRef = useRef<boolean | null>(null);
+
+  const MAX_HISTORY_EVENTS = 200;
 
   const activeBehaviourRef = useRef<{
     variant: string;
@@ -150,25 +153,38 @@ function App() {
     setInspectorWidth(clampedWidth);
   };
 
-  const handleSimulationResize = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    if (event.buttons !== 1) return;
+const handleSimulationResize = (
+  event: React.PointerEvent<HTMLDivElement>
+) => {
+  if (event.buttons !== 1) return;
 
-    const center = event.currentTarget.parentElement;
-    if (!center) return;
+  const center = event.currentTarget.parentElement;
+  if (!center) return;
 
-    const rect = center.getBoundingClientRect();
+  const rect = center.getBoundingClientRect();
 
-    const newHeight = rect.bottom - event.clientY;
+  const historyExtraHeight = isHistoryOpen ? 100 : 0;
+  const minEditorHeight = 180;
+  const minSimulationHeight = 180;
 
-    const clampedHeight = Math.max(
-      180,
-      Math.min(rect.height - 180, newHeight)
-    );
+  const availableHeight =
+    rect.height - minEditorHeight - historyExtraHeight;
 
-    setSimulationHeight(clampedHeight);
-  }
+  const maxSimulationHeight = Math.max(
+    minSimulationHeight,
+    availableHeight
+  );
+
+  const newHeight =
+    rect.bottom - event.clientY - historyExtraHeight;
+
+  setSimulationHeight(
+    Math.max(
+      minSimulationHeight,
+      Math.min(maxSimulationHeight, newHeight)
+    )
+  );
+};
 
   const handleDeleteCanvasNode = (nodeId: string) => {
     setNodeToDelete({
@@ -205,14 +221,12 @@ function App() {
     setSimulationHistory([]);
     simulationTimeRef.current = 0;
     lastRecordedBehaviourRef.current = "Idle";
+    lastRecordedDetectionrRef.current = null;
   }
 
   const recordBehaviourChange = (
     behaviourName: string,
-    deltaTime: number
   ) => {
-    simulationTimeRef.current += deltaTime;
-
     if (lastRecordedBehaviourRef.current === behaviourName) {
       return;
     }
@@ -229,7 +243,31 @@ function App() {
     setSimulationHistory((previous) => [
       ...previous,
       event,
-    ]);
+    ].slice(-MAX_HISTORY_EVENTS));
+  };
+
+  const recordDetectionChange = (
+    isDetected: boolean
+  ) => {
+    if (lastRecordedDetectionrRef.current === isDetected) {
+      return;
+    }
+
+    lastRecordedDetectionrRef.current = isDetected;
+
+    const event: SimulationHistoryEvent = {
+      id: crypto.randomUUID(),
+      timestamp: simulationTimeRef.current,
+      type: "condition-changed",
+      message: isDetected
+        ? "Can See Player - Success"
+        : "Can See Player - Failure",
+    };
+
+    setSimulationHistory((previous) => [
+      ...previous,
+      event,
+    ].slice(-MAX_HISTORY_EVENTS));
   };
 
   const handleStepSimulation = (deltaTime: number = SIMULATION_CONFIG.manualStepDuration) => {
@@ -238,6 +276,8 @@ function App() {
       setIsSimulationRunning(false);
       return;
     }
+
+    simulationTimeRef.current += deltaTime;
 
     const behaviour =
       behaviourEditorRef.current?.getActiveBehaviour();
@@ -258,7 +298,14 @@ function App() {
       previous === behaviourName ? previous : behaviourName
     );
 
-    recordBehaviourChange(behaviourName, deltaTime);
+    recordBehaviourChange(behaviourName);
+
+    const isDetected =
+      behaviourEditorRef.current?.getConditionStatus();
+
+    if (typeof isDetected === "boolean") {
+      recordDetectionChange(isDetected);
+    }
 
     if (behaviour.variant === "chase-player") {
 
@@ -538,24 +585,24 @@ function App() {
               <div
                 className="workspace-simulation"
                 style={{
-                  height: simulationHeight,
+                  height: simulationHeight + (isHistoryOpen ? 100 : 0),
                   flex: "none",
                   display: "flex",
                   flexDirection: "column",
                   minHeight: 0,
                 }}
               >
-                <div style={{flex: 1, minHeight: 0}}>
+                <div style={{ flex: 1, minHeight: 0 }}>
                   <SimulationViewport
                     agentPosition={agentPosition}
                     playerPosition={playerPosition}
-                      onPlayerPositionChange={setPlayerPosition}
-                      isRunning={isSimulationRunning}
-                      activeBehaviourName={activeBehaviourName}
+                    onPlayerPositionChange={setPlayerPosition}
+                    isRunning={isSimulationRunning}
+                    activeBehaviourName={activeBehaviourName}
                   />
                 </div>
 
-                <div className="execution-history-container">
+                <div className="execution-history-toolbar">
                   <button
                     type="button"
                     className="execution-history-toggle"
@@ -575,10 +622,21 @@ function App() {
                     </span>
                   </button>
 
-                  {isHistoryOpen && (
-                    <ExecutionHistory events={simulationHistory} />
+                  {isHistoryOpen && simulationHistory.length > 0 && (
+                    <button
+                      type="button"
+                      className="execution-history-clear"
+                      onClick={() => setSimulationHistory([])}
+                      title="Clear recorded events"
+                    >
+                      Clear
+                    </button>
                   )}
                 </div>
+
+                {isHistoryOpen && (
+                  <ExecutionHistory events={simulationHistory} />
+                )}
 
               </div>
             </div>

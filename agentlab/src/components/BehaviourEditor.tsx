@@ -81,6 +81,7 @@ export type BehaviourEditorHandle = {
         errors: number;
         warnings: number;
     };
+    getConditionStatus: () => boolean | null;
     clearExecutionTrace: () => void;
 };
 
@@ -189,6 +190,7 @@ const BehaviourEditor = forwardRef<
     }, [nodes, edges]);
 
     const [executionTrace, setExecutionTrace] = useState<NodeExecutionResult[]>([]);
+    const latestConditionStatusRef = useRef<boolean | null>(null);
 
     const updateExecutionTrace = useCallback(
         (nextTrace: NodeExecutionResult[]) => {
@@ -293,7 +295,7 @@ const BehaviourEditor = forwardRef<
                 node.type === "condition" &&
                 node.data.variant === "can-see-player"
             ) {
-                const detectionRange =
+                const range =
                     typeof node.data.detectionRange === "number"
                         ? node.data.detectionRange
                         : DEFAULT_DETECTION_RANGE;
@@ -301,8 +303,12 @@ const BehaviourEditor = forwardRef<
                 const detected = canSeePlayer(
                     agentPosition,
                     playerPosition,
-                    detectionRange
+                    range,
                 );
+
+                latestConditionStatusRef.current = detected;
+
+                leafStatuses[node.id] = detected ? "success" : "failure";
 
                 leafStatuses[node.id] = detected
                     ? "success"
@@ -416,6 +422,7 @@ const BehaviourEditor = forwardRef<
 
         clearExecutionTrace: () => {
             setExecutionTrace([]);
+            latestConditionStatusRef.current = null;
         },
 
         canRunSimulation: () => {
@@ -432,6 +439,10 @@ const BehaviourEditor = forwardRef<
             errors: errorCount,
             warnings: warningCount,
         }),
+
+        getConditionStatus: () => {
+            return latestConditionStatusRef.current;
+        },
 
         getActiveBehaviour: () => {
             const leafStatuses: Record<string, NodeStatus> = {};
@@ -451,6 +462,8 @@ const BehaviourEditor = forwardRef<
                         playerPosition,
                         range
                     );
+
+                    latestConditionStatusRef.current = detected;
 
                     leafStatuses[node.id] = detected ? "success" : "failure";
                 }

@@ -19,22 +19,31 @@ export default function ExecutionHistory({
                     <p className="execution-history-empty">
                         No events recorded yet.
                     </p>
-                    ) : (
-                        [...events].reverse().map((event) => (
-                            <div
-                                key={event.id}
-                                className="execution-history-event"
-                            >
-                                <span className="execution-history-time">
-                                    {event.timestamp.toFixed(1)}s
-                                </span>
+                ) : (
+                    [...events].reverse().map((event) => (
+                        <div
+                            key={event.id}
+                            className={`execution-history-event ${event.type === "condition-changed"
+                                    ? event.message.includes("Success")
+                                        ? "is-condition-success"
+                                        : "is-condition-failure"
+                                    : event.message === "Chasing Player"
+                                        ? "is-chasing"
+                                        : event.message === "Patrolling"
+                                            ? "is-patrolling"
+                                            : ""
+                                }`}
+                        >
+                            <span className="execution-history-time">
+                                {event.timestamp.toFixed(1)}s
+                            </span>
 
-                                <span className="execution-history-message">
-                                    {event.message}
-                                </span>
-                                </div>
-                        ))
-                    )}
+                            <span className="execution-history-message">
+                                {event.message}
+                            </span>
+                        </div>
+                    ))
+                )}
             </div>
         </section>
     );

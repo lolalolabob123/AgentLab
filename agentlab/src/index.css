@@ -38,43 +38,43 @@ body {
 }
 
 .status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .status-bar-left,
 .status-bar-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .status-indicator.ready {
-    background: #4ade80;
+  background: #4ade80;
 }
 
 .status-indicator.running {
-    background: #38bdf8;
+  background: #38bdf8;
 }
 
 .status-indicator.error {
-    background: #ef4444;
+  background: #ef4444;
 }
 
 .status-error-count {
-    color: #ef4444;
+  color: #ef4444;
 }
 
 .status-warning-count {
-    color: #f59e0b;
+  color: #f59e0b;
 }
 
 .workspace {
@@ -581,19 +581,23 @@ body {
 }
 
 .simulation-resize-divider {
-  flex: 0 0 6px;
-  height: 6px;
-  min-height: 0;
-  padding: 0;
-  background: #292d37;
-  border-top: 1px solid #373c48;
+  position: relative;
+  height: 8px;
+  min-height: 8px;
+  flex-shrink: 0;
+  background: #252a33;
+  border-top: 1px solid #363b44;
+  border-bottom: 1px solid #363b44;
   cursor: row-resize;
   touch-action: none;
-  position: relative;
-  z-index: 5;
+  z-index: 10;
 }
 
 .simulation-resize-divider:hover {
+  background: #374151;
+}
+
+.simulation-resize-divider:active {
   background: #475569;
 }
 
@@ -784,11 +788,11 @@ body {
   line-height: 1.5;
 }
 
-.problem-item + .problem-item {
+.problem-item+.problem-item {
   border-top: 1px solid #3b3f4a;
 }
 
-.problem-item.error > span:first-child {
+.problem-item.error>span:first-child {
   color: #ef4444;
 }
 
@@ -824,64 +828,64 @@ body {
 }
 
 .problem-item {
-    width: 100%;
-    text-align: left;
-    background: transparent;
-    border: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
 .problem-item:hover:not(:disabled) {
-    background: #343844;
+  background: #343844;
 }
 
 .problem-item:focus-visible {
-    outline: 2px solid #38bdf8;
-    outline-offset: -2px;
+  outline: 2px solid #38bdf8;
+  outline-offset: -2px;
 }
 
 .problem-item:disabled {
-    cursor: default;
-    opacity: 0.7;
+  cursor: default;
+  opacity: 0.7;
 }
 
 .simulation-active-behaviour {
-    font-size: 11px;
-    font-weight: 500;
-    white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .simulation-active-behaviour.patrolling {
-    color: #34d399;
+  color: #34d399;
 }
 
 .simulation-active-behaviour.chasing {
-    color: #f59e0b;
+  color: #f59e0b;
 }
 
 .simulation-active-behaviour.idle {
-    color: #9ca3af;
+  color: #9ca3af;
 }
 
 .execution-legend-line.success {
-    background-color: #4ade80;
+  background-color: #4ade80;
 }
 
 .react-flow__node.execution-running {
-    outline: 2px solid #38bdf8;
-    outline-offset: 2px;
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
 }
 
 .react-flow__node.execution-success {
-    outline: 2px solid #4ade80;
-    outline-offset: 2px;
+  outline: 2px solid #4ade80;
+  outline-offset: 2px;
 }
 
 .react-flow__node.execution-failure {
-    outline: 2px solid #ef4444;
-    outline-offset: 2px;
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
 }
 
 .execution-history-container {
@@ -890,11 +894,18 @@ body {
   background: #20232b;
 }
 
+.execution-history-toolbar {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #363b44;
+}
+
 .execution-history-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 9px 12px;
   background: transparent;
   border: none;
@@ -931,9 +942,10 @@ body {
 
 .execution-history-event {
   display: flex;
+  align-items: center;
   gap: 12px;
-  padding: 6px 0;
-  font-size: 12px;
+  padding: 6px 8px;
+  border-left: 2px solid transparent;
   border-bottom: 1px solid #303540;
 }
 
@@ -945,4 +957,53 @@ body {
 
 .execution-history-message {
   color: #e5e7eb;
+}
+
+.execution-history-event.is-chasing {
+  border-left-color: #f59e0b;
+}
+
+.execution-history-event.is-chasing .execution-history-message {
+  color: #fbbf24;
+}
+
+.execution-history-event.is-patrolling {
+  border-left-color: #34d399;
+}
+
+.execution-history-event.is-patrolling .execution-history-message {
+  color: #34d399;
+}
+
+.execution-history-event.is-condition-success {
+  border-left-color: #4ade80;
+}
+
+.execution-history-event.is-condition-success .execution-history-message {
+  color: #4ade80;
+}
+
+.execution-history-event.is-condition-failure {
+  border-left-color: #ef4444;
+}
+
+.execution-history-event.is-condition-failure .execution-history-message {
+  color: #f87171;
+}
+
+.execution-history-clear {
+  flex-shrink: 0;
+  margin: 0 10px 0 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid #454b57;
+  border-radius: 4px;
+  color: #aeb6c3;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.execution-history-clear:hover {
+  background: #303642;
+  color: #ffffff;
 }
